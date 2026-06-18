@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: codeguard-postgres
+    environment:
+      POSTGRES_DB: codeguard
+      POSTGRES_USER: codeguard
+      POSTGRES_PASSWORD: codeguard
+    ports:
+      - "5433:5432"
+    volumes:
+      - codeguard_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codeguard -d codeguard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: codeguard-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - codeguard_redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+volumes:
+  codeguard_postgres_data:
+  codeguard_redis_data:
