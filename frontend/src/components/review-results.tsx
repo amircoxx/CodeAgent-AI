@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Code2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Code2, FlaskConical } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { IssueSeverity, ReviewResponse, RiskLevel } from "@/types/review";
+import type { ReviewResponse, Severity } from "@/types/review";
 
 type ReviewResultsProps = {
   data?: ReviewResponse;
@@ -17,11 +17,40 @@ type ReviewResultsProps = {
   isPending: boolean;
 };
 
-const severityVariant: Record<IssueSeverity | RiskLevel, "low" | "medium" | "high"> = {
+const severityVariant: Record<Severity, "low" | "medium" | "high"> = {
   LOW: "low",
   MEDIUM: "medium",
   HIGH: "high",
+  CRITICAL: "high",
 };
+
+function riskDisplay(score: number): {
+  label: string;
+  variant: "low" | "medium" | "high";
+} {
+  if (score >= 90) {
+    return { label: "Critical Risk", variant: "high" };
+  }
+
+  if (score >= 70) {
+    return { label: "High Risk", variant: "high" };
+  }
+
+  if (score >= 40) {
+    return { label: "Medium Risk", variant: "medium" };
+  }
+
+  return { label: "Low Risk", variant: "low" };
+}
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
 
 export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
   if (isPending) {
@@ -61,8 +90,8 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
           <div>
             <h2 className="text-lg font-semibold">Awaiting analysis</h2>
             <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-              Results will appear here with summary, risk, issues, and improved
-              code after you run the first review.
+              Select a saved review or submit code to see the summary, risk
+              score, issues, and recommended tests.
             </p>
           </div>
         </CardContent>
@@ -70,23 +99,31 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
     );
   }
 
+  const risk = riskDisplay(data.riskScore);
+
   return (
     <Card className="border-white/10 bg-slate-950/76 backdrop-blur">
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <CardTitle>Review results</CardTitle>
+            <CardTitle>{data.title}</CardTitle>
             <CardDescription>{data.summary}</CardDescription>
           </div>
-          <Badge variant={severityVariant[data.riskLevel]}>
-            {data.riskLevel} RISK
+          <Badge variant={risk.variant}>
+            {risk.label}: {data.riskScore}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+          {data.projectName ? (
+            <Badge variant="outline">Project: {data.projectName}</Badge>
+          ) : null}
           <Badge variant="outline">Language: {data.language}</Badge>
+          <Badge variant="outline">Review #{data.id}</Badge>
+          <Badge variant="outline">{formatDate(data.createdAt)}</Badge>
           <Badge variant="outline">{data.issues.length} issues</Badge>
+          <Badge variant="outline">{data.recommendedTests.length} tests</Badge>
         </div>
 
         <Separator />
@@ -104,8 +141,13 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
                 </Badge>
               </div>
               <h3 className="font-semibold text-slate-100">{issue.title}</h3>
+              {issue.lineNumber ? (
+                <p className="mt-1 text-xs font-medium text-cyan-200">
+                  Line {issue.lineNumber}
+                </p>
+              ) : null}
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                {issue.description}
+                {issue.explanation}
               </p>
               <div className="mt-3 flex gap-2 rounded-md border border-emerald-300/15 bg-emerald-300/10 p-3 text-sm text-emerald-100">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none" />
@@ -116,10 +158,22 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-slate-200">Improved code</h3>
-          <pre className="overflow-x-auto rounded-lg border border-white/10 bg-black/45 p-4 font-mono text-[13px] leading-6 text-slate-100">
-            <code>{data.improvedCode}</code>
-          </pre>
+          <div className="flex items-center gap-2">
+            <FlaskConical className="h-4 w-4 text-cyan-200" />
+            <h3 className="text-sm font-semibold text-slate-200">
+              Recommended tests
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {data.recommendedTests.map((test) => (
+              <div
+                key={test}
+                className="rounded-md border border-cyan-300/15 bg-cyan-300/10 p-3 text-sm text-cyan-50"
+              >
+                {test}
+              </div>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>

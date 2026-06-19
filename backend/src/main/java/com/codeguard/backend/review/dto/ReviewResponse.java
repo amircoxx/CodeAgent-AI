@@ -1,13 +1,18 @@
 package com.codeguard.backend.review.dto;
 
-import com.codeguard.backend.review.model.RiskLevel;
+import java.time.Instant;
 import java.util.List;
 
 public record ReviewResponse(
-    String summary,
-    RiskLevel riskLevel,
+    Long id,
+    Long projectId,
+    String projectName,
+    String title,
     String language,
+    String summary,
+    int riskScore,
+    Instant createdAt,
     List<ReviewIssue> issues,
-    String improvedCode
+    List<String> recommendedTests
 ) {
 }

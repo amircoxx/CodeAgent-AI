@@ -1,7 +1,8 @@
 package com.codeguard.backend.review.model;
 
-public enum RiskLevel {
+public enum Severity {
   LOW,
   MEDIUM,
-  HIGH
+  HIGH,
+  CRITICAL
 }

@@ -19,22 +19,34 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { ReviewRequest } from "@/types/review";
+import type { ProjectResponse, ReviewRequest } from "@/types/review";
 
 const languages = ["JavaScript", "TypeScript", "Python", "Java", "SQL", "C++"];
 
 type CodeReviewFormProps = {
   isPending: boolean;
+  projects?: ProjectResponse[];
+  areProjectsLoading: boolean;
+  projectsError?: Error | null;
   onSubmit: (payload: ReviewRequest) => void;
 };
 
-export function CodeReviewForm({ isPending, onSubmit }: CodeReviewFormProps) {
+const noProjectValue = "__no_project__";
+
+export function CodeReviewForm({
+  isPending,
+  projects,
+  areProjectsLoading,
+  projectsError,
+  onSubmit,
+}: CodeReviewFormProps) {
+  const [title, setTitle] = useState("Login Controller Review");
+  const [projectId, setProjectId] = useState(noProjectValue);
   const [language, setLanguage] = useState("JavaScript");
   const [code, setCode] = useState(
     "function test() {\n  console.log('hi')\n}",
   );
-
-  const isDisabled = isPending || code.trim().length === 0;
+  const [localError, setLocalError] = useState<string>();
 
   return (
     <Card className="border-white/10 bg-slate-950/76 backdrop-blur">
@@ -53,9 +65,72 @@ export function CodeReviewForm({ isPending, onSubmit }: CodeReviewFormProps) {
           className="space-y-5"
           onSubmit={(event) => {
             event.preventDefault();
-            onSubmit({ language, code });
+            setLocalError(undefined);
+
+            if (title.trim().length === 0) {
+              setLocalError("Review title is required.");
+              return;
+            }
+
+            if (language.trim().length === 0) {
+              setLocalError("Language is required.");
+              return;
+            }
+
+            if (code.trim().length === 0) {
+              setLocalError("Code is required.");
+              return;
+            }
+
+            onSubmit({
+              ...(projectId === noProjectValue ? {} : { projectId: Number(projectId) }),
+              title: title.trim(),
+              language: language.trim(),
+              code: code.trim(),
+            });
           }}
         >
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-200" htmlFor="title">
+              Review title
+            </label>
+            <input
+              id="title"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="Login Controller Review"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-200" htmlFor="project">
+              Project
+            </label>
+            <Select value={projectId} onValueChange={setProjectId}>
+              <SelectTrigger id="project" className="bg-slate-950/80">
+                <SelectValue placeholder="Select project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={noProjectValue}>No project</SelectItem>
+                {projects?.map((project) => (
+                  <SelectItem key={project.id} value={String(project.id)}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {areProjectsLoading ? (
+              <p className="text-xs text-slate-400">Loading projects...</p>
+            ) : projectsError ? (
+              <p className="text-xs text-red-200">{projectsError.message}</p>
+            ) : projects?.length === 0 ? (
+              <p className="text-xs text-slate-400">
+                No projects yet. Reviews can still be submitted without one.
+              </p>
+            ) : null}
+          </div>
+
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-200" htmlFor="language">
               Language
@@ -88,7 +163,11 @@ export function CodeReviewForm({ isPending, onSubmit }: CodeReviewFormProps) {
             />
           </div>
 
-          <Button className="w-full" disabled={isDisabled} type="submit" size="lg">
+          {localError ? (
+            <p className="text-sm text-red-200">{localError}</p>
+          ) : null}
+
+          <Button className="w-full" disabled={isPending} type="submit" size="lg">
             {isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
