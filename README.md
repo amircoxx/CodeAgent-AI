@@ -242,6 +242,8 @@ CodeGuard AI is deployment-ready as two services plus a hosted PostgreSQL databa
 - Frontend: Next.js app.
 - Database: hosted PostgreSQL.
 
+For the current recommended deployment target, use the exact Render and Vercel checklist in [docs/deployment-render-vercel.md](docs/deployment-render-vercel.md).
+
 Deployment checklist:
 
 1. Create a hosted PostgreSQL database.

@@ -41,4 +41,12 @@ class HealthControllerTest {
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.message").value("Your session expired. Please log in again."));
   }
+
+  @Test
+  void unknownRouteReturnsNotFoundInsteadOfServerError() throws Exception {
+    mockMvc.perform(get("/"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message").value("Resource not found: /"))
+        .andExpect(jsonPath("$.path").value("/"));
+  }
 }

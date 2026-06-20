@@ -6,6 +6,7 @@ import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -29,6 +30,14 @@ public class GlobalExceptionHandler {
         : String.join("; ", messages);
 
     return build(HttpStatus.BAD_REQUEST, message, request.getRequestURI());
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ApiErrorResponse> handleNoResourceFound(
+      NoResourceFoundException exception,
+      HttpServletRequest request
+  ) {
+    return build(HttpStatus.NOT_FOUND, "Resource not found: " + request.getRequestURI(), request.getRequestURI());
   }
 
   @ExceptionHandler(RuntimeException.class)
