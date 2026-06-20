@@ -48,6 +48,19 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
+function pullRequestLabel(review: ReviewResponse): string | undefined {
+  if (
+    review.source !== "GITHUB_PR" ||
+    !review.githubOwner ||
+    !review.githubRepo ||
+    !review.githubPullRequestNumber
+  ) {
+    return undefined;
+  }
+
+  return `${review.githubOwner}/${review.githubRepo}#${review.githubPullRequestNumber}`;
+}
+
 export function ReviewHistory({
   data,
   error,
@@ -91,6 +104,7 @@ export function ReviewHistory({
           {data?.map((review) => {
             const isSelected = review.id === selectedReviewId;
             const risk = riskDisplay(review.riskScore);
+            const prLabel = pullRequestLabel(review);
 
             return (
               <button
@@ -106,12 +120,23 @@ export function ReviewHistory({
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold text-slate-100">
-                      {review.title}
-                    </h3>
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <Badge variant={review.source === "GITHUB_PR" ? "medium" : "outline"}>
+                        {review.source === "GITHUB_PR" ? "GitHub PR" : "Manual"}
+                      </Badge>
+                      {prLabel ? (
+                        <Badge variant="outline">PR: {prLabel}</Badge>
+                      ) : null}
+                    </div>
+                    <h3 className="font-semibold text-slate-100">{review.title}</h3>
                     <p className="mt-1 text-sm text-slate-400">
                       {review.language}
                     </p>
+                    {review.source === "GITHUB_PR" && review.githubPullRequestTitle ? (
+                      <p className="mt-1 text-sm text-slate-300">
+                        Title: {review.githubPullRequestTitle}
+                      </p>
+                    ) : null}
                     {review.projectName ? (
                       <p className="mt-1 text-sm text-cyan-200">
                         Project: {review.projectName}

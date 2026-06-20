@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.codeguard.backend.project.repository.ProjectRepository;
 import com.codeguard.backend.review.entity.CodeReviewEntity;
+import com.codeguard.backend.review.model.ReviewSource;
 import com.codeguard.backend.review.repository.CodeReviewRepository;
 import com.codeguard.backend.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -81,6 +82,12 @@ class GitHubControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.title").value("GitHub PR Review: owner/repo#123"))
         .andExpect(jsonPath("$.language").value("Multiple"))
+        .andExpect(jsonPath("$.source").value("GITHUB_PR"))
+        .andExpect(jsonPath("$.githubOwner").value("owner"))
+        .andExpect(jsonPath("$.githubRepo").value("repo"))
+        .andExpect(jsonPath("$.githubPullRequestNumber").value(123))
+        .andExpect(jsonPath("$.githubPullRequestUrl").value("https://github.com/owner/repo/pull/123"))
+        .andExpect(jsonPath("$.githubPullRequestTitle").value("Add validation"))
         .andExpect(jsonPath("$.projectId").value(projectId))
         .andExpect(jsonPath("$.projectName").value("CodeGuard Backend"))
         .andExpect(jsonPath("$.summary").value(org.hamcrest.Matchers.containsString("Multiple code")))
@@ -92,6 +99,12 @@ class GitHubControllerTest {
     assertThat(savedReview.getId()).isEqualTo(response.get("id").asLong());
     assertThat(savedReview.getUser().getId()).isPositive();
     assertThat(savedReview.getProject().getId()).isEqualTo(projectId);
+    assertThat(savedReview.getSource()).isEqualTo(ReviewSource.GITHUB_PR);
+    assertThat(savedReview.getGithubOwner()).isEqualTo("owner");
+    assertThat(savedReview.getGithubRepo()).isEqualTo("repo");
+    assertThat(savedReview.getGithubPullRequestNumber()).isEqualTo(123);
+    assertThat(savedReview.getGithubPullRequestUrl()).isEqualTo("https://github.com/owner/repo/pull/123");
+    assertThat(savedReview.getGithubPullRequestTitle()).isEqualTo("Add validation");
     assertThat(savedReview.getSubmittedCode())
         .contains("Repository: owner/repo")
         .contains("Pull Request: #123 - Add validation")
@@ -146,7 +159,12 @@ class GitHubControllerTest {
             .header("Authorization", "Bearer " + token))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].title").value("GitHub PR Review: owner/repo#123"))
-        .andExpect(jsonPath("$[0].language").value("Multiple"));
+        .andExpect(jsonPath("$[0].language").value("Multiple"))
+        .andExpect(jsonPath("$[0].source").value("GITHUB_PR"))
+        .andExpect(jsonPath("$[0].githubOwner").value("owner"))
+        .andExpect(jsonPath("$[0].githubRepo").value("repo"))
+        .andExpect(jsonPath("$[0].githubPullRequestNumber").value(123))
+        .andExpect(jsonPath("$[0].githubPullRequestTitle").value("Add validation"));
   }
 
   private void stubGitHubPullRequest() {

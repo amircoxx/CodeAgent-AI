@@ -8,6 +8,7 @@ import com.codeguard.backend.review.analysis.CodeAnalysisResult;
 import com.codeguard.backend.review.analysis.CodeAnalysisService;
 import com.codeguard.backend.review.entity.CodeReviewEntity;
 import com.codeguard.backend.review.entity.ReviewIssueEntity;
+import com.codeguard.backend.review.model.ReviewSource;
 import com.codeguard.backend.review.dto.ReviewIssue;
 import com.codeguard.backend.review.dto.ReviewRequest;
 import com.codeguard.backend.review.dto.ReviewResponse;
@@ -54,6 +55,49 @@ public class ReviewService {
       String language,
       String submittedCode
   ) {
+    return createAnalyzedReview(
+        projectId,
+        title,
+        language,
+        submittedCode,
+        ReviewMetadata.manual()
+    );
+  }
+
+  @Transactional
+  public ReviewResponse createGitHubPullRequestReview(
+      Long projectId,
+      String title,
+      String language,
+      String submittedCode,
+      String githubOwner,
+      String githubRepo,
+      Integer githubPullRequestNumber,
+      String githubPullRequestUrl,
+      String githubPullRequestTitle
+  ) {
+    return createAnalyzedReview(
+        projectId,
+        title,
+        language,
+        submittedCode,
+        ReviewMetadata.githubPullRequest(
+            githubOwner,
+            githubRepo,
+            githubPullRequestNumber,
+            githubPullRequestUrl,
+            githubPullRequestTitle
+        )
+    );
+  }
+
+  private ReviewResponse createAnalyzedReview(
+      Long projectId,
+      String title,
+      String language,
+      String submittedCode,
+      ReviewMetadata metadata
+  ) {
     UserEntity user = currentUserService.getCurrentUser();
     ReviewRequest request = new ReviewRequest(projectId, title, language, submittedCode);
     CodeAnalysisResult analysis = codeAnalysisService.analyzeCode(request);
@@ -65,6 +109,16 @@ public class ReviewService {
         analysis.riskScore()
     );
     review.setUser(user);
+
+    if (metadata.source() == ReviewSource.GITHUB_PR) {
+      review.markAsGitHubPullRequestReview(
+          metadata.githubOwner(),
+          metadata.githubRepo(),
+          metadata.githubPullRequestNumber(),
+          metadata.githubPullRequestUrl(),
+          metadata.githubPullRequestTitle()
+      );
+    }
 
     if (projectId != null) {
       ProjectEntity project = projectRepository.findByIdAndUserId(projectId, user.getId())
@@ -112,6 +166,12 @@ public class ReviewService {
         review.getLanguage(),
         review.getSummary(),
         review.getRiskScore(),
+        review.getSource(),
+        review.getGithubOwner(),
+        review.getGithubRepo(),
+        review.getGithubPullRequestNumber(),
+        review.getGithubPullRequestUrl(),
+        review.getGithubPullRequestTitle(),
         review.getCreatedAt(),
         review.getIssues().stream()
             .map(issue -> new ReviewIssue(
@@ -125,5 +185,36 @@ public class ReviewService {
             .toList(),
         List.copyOf(review.getRecommendedTests())
     );
+  }
+
+  private record ReviewMetadata(
+      ReviewSource source,
+      String githubOwner,
+      String githubRepo,
+      Integer githubPullRequestNumber,
+      String githubPullRequestUrl,
+      String githubPullRequestTitle
+  ) {
+
+    private static ReviewMetadata manual() {
+      return new ReviewMetadata(ReviewSource.MANUAL, null, null, null, null, null);
+    }
+
+    private static ReviewMetadata githubPullRequest(
+        String githubOwner,
+        String githubRepo,
+        Integer githubPullRequestNumber,
+        String githubPullRequestUrl,
+        String githubPullRequestTitle
+    ) {
+      return new ReviewMetadata(
+          ReviewSource.GITHUB_PR,
+          githubOwner,
+          githubRepo,
+          githubPullRequestNumber,
+          githubPullRequestUrl,
+          githubPullRequestTitle
+      );
+    }
   }
 }

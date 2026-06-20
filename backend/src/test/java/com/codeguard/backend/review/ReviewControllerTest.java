@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.codeguard.backend.project.repository.ProjectRepository;
 import com.codeguard.backend.review.entity.CodeReviewEntity;
+import com.codeguard.backend.review.model.ReviewSource;
 import com.codeguard.backend.review.repository.CodeReviewRepository;
 import com.codeguard.backend.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -66,6 +67,8 @@ class ReviewControllerTest {
     assertThat(savedReview.getTitle()).isEqualTo("Login Controller Review");
     assertThat(savedReview.getLanguage()).isEqualTo("Java");
     assertThat(savedReview.getSubmittedCode()).contains("LoginController");
+    assertThat(savedReview.getSource()).isEqualTo(ReviewSource.MANUAL);
+    assertThat(savedReview.getGithubOwner()).isNull();
     assertThat(savedReview.getProject()).isNull();
     assertThat(savedReview.getUser().getId()).isPositive();
   }
@@ -86,6 +89,15 @@ class ReviewControllerTest {
     assertThat(response.get("title").asText()).isEqualTo("Login Controller Review");
     assertThat(response.get("summary").asText()).contains("Java code");
     assertThat(response.get("riskScore").asInt()).isEqualTo(78);
+    assertThat(response.get("source").asText()).isEqualTo("MANUAL");
+    assertThat(response.path("githubOwner").isMissingNode() || response.path("githubOwner").isNull()).isTrue();
+    assertThat(response.path("githubRepo").isMissingNode() || response.path("githubRepo").isNull()).isTrue();
+    assertThat(response.path("githubPullRequestNumber").isMissingNode()
+        || response.path("githubPullRequestNumber").isNull()).isTrue();
+    assertThat(response.path("githubPullRequestUrl").isMissingNode()
+        || response.path("githubPullRequestUrl").isNull()).isTrue();
+    assertThat(response.path("githubPullRequestTitle").isMissingNode()
+        || response.path("githubPullRequestTitle").isNull()).isTrue();
     assertThat(response.get("createdAt").asText()).isNotBlank();
     assertThat(response.get("issues")).isNotEmpty();
     assertThat(response.get("recommendedTests")).isNotEmpty();
@@ -164,6 +176,12 @@ class ReviewControllerTest {
         .andExpect(jsonPath("$.projectName").doesNotExist())
         .andExpect(jsonPath("$.title").value("Payment Service Review"))
         .andExpect(jsonPath("$.language").value("Java"))
+        .andExpect(jsonPath("$.source").value("MANUAL"))
+        .andExpect(jsonPath("$.githubOwner").doesNotExist())
+        .andExpect(jsonPath("$.githubRepo").doesNotExist())
+        .andExpect(jsonPath("$.githubPullRequestNumber").doesNotExist())
+        .andExpect(jsonPath("$.githubPullRequestUrl").doesNotExist())
+        .andExpect(jsonPath("$.githubPullRequestTitle").doesNotExist())
         .andExpect(jsonPath("$.issues[0].title").value("Missing input validation"))
         .andExpect(jsonPath("$.recommendedTests[0]").value("Test Payment Service Review with invalid input"));
   }

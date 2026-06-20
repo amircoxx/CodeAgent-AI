@@ -1,4 +1,10 @@
-import { AlertCircle, CheckCircle2, Code2, FlaskConical } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Code2,
+  ExternalLink,
+  FlaskConical,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -52,6 +58,14 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
+function repositoryLabel(data: ReviewResponse): string | undefined {
+  if (!data.githubOwner || !data.githubRepo) {
+    return undefined;
+  }
+
+  return `${data.githubOwner}/${data.githubRepo}`;
+}
+
 export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
   if (isPending) {
     return (
@@ -100,6 +114,7 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
   }
 
   const risk = riskDisplay(data.riskScore);
+  const repo = repositoryLabel(data);
 
   return (
     <Card className="border-white/10 bg-slate-950/76 backdrop-blur">
@@ -116,6 +131,9 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+          <Badge variant={data.source === "GITHUB_PR" ? "medium" : "outline"}>
+            {data.source === "GITHUB_PR" ? "GitHub PR" : "Manual"}
+          </Badge>
           {data.projectName ? (
             <Badge variant="outline">Project: {data.projectName}</Badge>
           ) : null}
@@ -125,6 +143,54 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
           <Badge variant="outline">{data.issues.length} issues</Badge>
           <Badge variant="outline">{data.recommendedTests.length} tests</Badge>
         </div>
+
+        {data.source === "GITHUB_PR" ? (
+          <div className="rounded-md border border-cyan-300/15 bg-cyan-300/10 p-4">
+            <h3 className="text-sm font-semibold text-cyan-50">
+              GitHub pull request
+            </h3>
+            <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+              {repo ? (
+                <div>
+                  <dt className="text-slate-400">Repository</dt>
+                  <dd className="mt-1 font-medium text-slate-100">{repo}</dd>
+                </div>
+              ) : null}
+              {data.githubPullRequestNumber ? (
+                <div>
+                  <dt className="text-slate-400">Pull request number</dt>
+                  <dd className="mt-1 font-medium text-slate-100">
+                    #{data.githubPullRequestNumber}
+                  </dd>
+                </div>
+              ) : null}
+              {data.githubPullRequestTitle ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-slate-400">Pull request title</dt>
+                  <dd className="mt-1 font-medium text-slate-100">
+                    {data.githubPullRequestTitle}
+                  </dd>
+                </div>
+              ) : null}
+              {data.githubPullRequestUrl ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-slate-400">Pull request URL</dt>
+                  <dd className="mt-1">
+                    <a
+                      href={data.githubPullRequestUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 break-all font-medium text-cyan-100 hover:text-cyan-50"
+                    >
+                      {data.githubPullRequestUrl}
+                      <ExternalLink className="h-3.5 w-3.5 flex-none" />
+                    </a>
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+          </div>
+        ) : null}
 
         <Separator />
 

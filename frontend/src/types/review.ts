@@ -1,4 +1,5 @@
 export type Severity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+export type ReviewSource = "MANUAL" | "GITHUB_PR";
 
 export type IssueCategory =
   | "SECURITY"
@@ -38,6 +39,12 @@ export type ReviewResponse = {
   language: string;
   summary: string;
   riskScore: number;
+  source: ReviewSource;
+  githubOwner?: string | null;
+  githubRepo?: string | null;
+  githubPullRequestNumber?: number | null;
+  githubPullRequestUrl?: string | null;
+  githubPullRequestTitle?: string | null;
   createdAt: string;
   issues: ReviewIssue[];
   recommendedTests: string[];

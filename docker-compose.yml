@@ -3,15 +3,15 @@ services:
     image: postgres:16
     container_name: codeguard-postgres
     environment:
-      POSTGRES_DB: codeguard
-      POSTGRES_USER: codeguard
-      POSTGRES_PASSWORD: codeguard
+      POSTGRES_DB: ${POSTGRES_DB:-codeguard}
+      POSTGRES_USER: ${POSTGRES_USER:-codeguard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-codeguard}
     ports:
       - "5433:5432"
     volumes:
       - codeguard_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U codeguard -d codeguard"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,6 +24,46 @@ services:
     volumes:
       - codeguard_redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
+
+  backend:
+    build:
+      context: ./backend
+    container_name: codeguard-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-codeguard}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-${POSTGRES_USER:-codeguard}}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-${POSTGRES_PASSWORD:-codeguard}}
+      CODEGUARD_JWT_SECRET: ${CODEGUARD_JWT_SECRET:-dev-secret-change-me}
+      CODEGUARD_JWT_EXPIRATION_MS: ${CODEGUARD_JWT_EXPIRATION_MS:-86400000}
+      CODEGUARD_AI_ENABLED: ${CODEGUARD_AI_ENABLED:-false}
+      CODEGUARD_AI_API_KEY: ${CODEGUARD_AI_API_KEY:-}
+      CODEGUARD_AI_MODEL: ${CODEGUARD_AI_MODEL:-gpt-4o-mini}
+      CODEGUARD_AI_ENDPOINT: ${CODEGUARD_AI_ENDPOINT:-https://api.openai.com/v1/chat/completions}
+      CODEGUARD_AI_TIMEOUT_SECONDS: ${CODEGUARD_AI_TIMEOUT_SECONDS:-20}
+      CODEGUARD_GITHUB_TOKEN: ${CODEGUARD_GITHUB_TOKEN:-}
+      CODEGUARD_GITHUB_API_BASE_URL: ${CODEGUARD_GITHUB_API_BASE_URL:-https://api.github.com}
+      CODEGUARD_GITHUB_TIMEOUT_SECONDS: ${CODEGUARD_GITHUB_TIMEOUT_SECONDS:-15}
+      CODEGUARD_GITHUB_MAX_FILES: ${CODEGUARD_GITHUB_MAX_FILES:-20}
+      CODEGUARD_GITHUB_MAX_PATCH_CHARS: ${CODEGUARD_GITHUB_MAX_PATCH_CHARS:-30000}
+      CODEGUARD_CORS_ALLOWED_ORIGINS: ${CODEGUARD_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:3002}
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
+    container_name: codeguard-frontend
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
+    ports:
+      - "3000:3000"
 
 volumes:
   codeguard_postgres_data:

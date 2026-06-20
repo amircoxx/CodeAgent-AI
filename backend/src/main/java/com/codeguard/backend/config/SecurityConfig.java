@@ -53,6 +53,7 @@ public class SecurityConfig {
         )
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
             .requestMatchers("/api/auth/me").authenticated()
             .requestMatchers("/api/projects/**", "/api/reviews/**", "/api/github/**").authenticated()
@@ -78,13 +79,9 @@ public class SecurityConfig {
   }
 
   @Bean
-  CorsConfigurationSource corsConfigurationSource() {
+  CorsConfigurationSource corsConfigurationSource(CodeGuardCorsProperties corsProperties) {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of(
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002"
-    ));
+    configuration.setAllowedOrigins(corsProperties.allowedOriginsOrDefault());
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("*"));
     configuration.setExposedHeaders(List.of("Authorization"));

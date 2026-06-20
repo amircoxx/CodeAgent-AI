@@ -42,12 +42,21 @@ public class GitHubPullRequestReviewService {
     String title = "GitHub PR Review: "
         + pullRequest.owner() + "/" + pullRequest.repo() + "#" + pullRequest.number();
 
-    return reviewService.createAnalyzedReview(
+    return reviewService.createGitHubPullRequestReview(
         request.projectId(),
         title,
         "Multiple",
-        buildReviewInput(pullRequest, metadata, reviewableFiles)
+        buildReviewInput(pullRequest, metadata, reviewableFiles),
+        pullRequest.owner(),
+        pullRequest.repo(),
+        pullRequest.number(),
+        request.pullRequestUrl().trim(),
+        blankToNull(metadata.title())
     );
+  }
+
+  private String blankToNull(String value) {
+    return value == null || value.isBlank() ? null : value;
   }
 
   private boolean isReviewable(GitHubPullRequestFile file) {

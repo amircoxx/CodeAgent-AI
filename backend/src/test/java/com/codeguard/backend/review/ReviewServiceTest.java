@@ -6,6 +6,7 @@ import com.codeguard.backend.project.repository.ProjectRepository;
 import com.codeguard.backend.review.dto.ReviewRequest;
 import com.codeguard.backend.review.dto.ReviewResponse;
 import com.codeguard.backend.review.entity.CodeReviewEntity;
+import com.codeguard.backend.review.model.ReviewSource;
 import com.codeguard.backend.review.repository.CodeReviewRepository;
 import com.codeguard.backend.user.entity.UserEntity;
 import com.codeguard.backend.user.repository.UserRepository;
@@ -65,6 +66,12 @@ class ReviewServiceTest {
     assertThat(response.id()).isPositive();
     assertThat(response.summary()).contains("Java code");
     assertThat(response.riskScore()).isEqualTo(78);
+    assertThat(response.source()).isEqualTo(ReviewSource.MANUAL);
+    assertThat(response.githubOwner()).isNull();
+    assertThat(response.githubRepo()).isNull();
+    assertThat(response.githubPullRequestNumber()).isNull();
+    assertThat(response.githubPullRequestUrl()).isNull();
+    assertThat(response.githubPullRequestTitle()).isNull();
     assertThat(response.issues()).isNotEmpty();
     assertThat(response.recommendedTests()).isNotEmpty();
 
@@ -72,6 +79,8 @@ class ReviewServiceTest {
     CodeReviewEntity savedReview = codeReviewRepository.findWithIssuesAndRecommendedTestsById(response.id())
         .orElseThrow();
     assertThat(savedReview.getTitle()).isEqualTo("Service Layer Review");
+    assertThat(savedReview.getSource()).isEqualTo(ReviewSource.MANUAL);
+    assertThat(savedReview.getGithubOwner()).isNull();
     assertThat(savedReview.getIssues()).hasSize(3);
     assertThat(savedReview.getUser().getId()).isPositive();
   }

@@ -1,12 +1,15 @@
 package com.codeguard.backend.review.entity;
 
 import com.codeguard.backend.project.entity.ProjectEntity;
+import com.codeguard.backend.review.model.ReviewSource;
 import com.codeguard.backend.user.entity.UserEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -43,6 +46,25 @@ public class CodeReviewEntity {
   @Column(nullable = false)
   private int riskScore;
 
+  @Enumerated(EnumType.STRING)
+  @Column
+  private ReviewSource source;
+
+  @Column
+  private String githubOwner;
+
+  @Column
+  private String githubRepo;
+
+  @Column
+  private Integer githubPullRequestNumber;
+
+  @Column
+  private String githubPullRequestUrl;
+
+  @Column
+  private String githubPullRequestTitle;
+
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
@@ -78,6 +100,7 @@ public class CodeReviewEntity {
     this.submittedCode = submittedCode;
     this.summary = summary;
     this.riskScore = riskScore;
+    this.source = ReviewSource.MANUAL;
     this.createdAt = Instant.now();
   }
 
@@ -103,6 +126,30 @@ public class CodeReviewEntity {
 
   public int getRiskScore() {
     return riskScore;
+  }
+
+  public ReviewSource getSource() {
+    return source == null ? ReviewSource.MANUAL : source;
+  }
+
+  public String getGithubOwner() {
+    return githubOwner;
+  }
+
+  public String getGithubRepo() {
+    return githubRepo;
+  }
+
+  public Integer getGithubPullRequestNumber() {
+    return githubPullRequestNumber;
+  }
+
+  public String getGithubPullRequestUrl() {
+    return githubPullRequestUrl;
+  }
+
+  public String getGithubPullRequestTitle() {
+    return githubPullRequestTitle;
   }
 
   public Instant getCreatedAt() {
@@ -140,5 +187,20 @@ public class CodeReviewEntity {
 
   public void setUser(UserEntity user) {
     this.user = user;
+  }
+
+  public void markAsGitHubPullRequestReview(
+      String githubOwner,
+      String githubRepo,
+      Integer githubPullRequestNumber,
+      String githubPullRequestUrl,
+      String githubPullRequestTitle
+  ) {
+    this.source = ReviewSource.GITHUB_PR;
+    this.githubOwner = githubOwner;
+    this.githubRepo = githubRepo;
+    this.githubPullRequestNumber = githubPullRequestNumber;
+    this.githubPullRequestUrl = githubPullRequestUrl;
+    this.githubPullRequestTitle = githubPullRequestTitle;
   }
 }
