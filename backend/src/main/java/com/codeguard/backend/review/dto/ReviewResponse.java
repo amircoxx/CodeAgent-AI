@@ -18,6 +18,9 @@ public record ReviewResponse(
     Integer githubPullRequestNumber,
     String githubPullRequestUrl,
     String githubPullRequestTitle,
+    boolean githubCommentPosted,
+    String githubCommentUrl,
+    String githubCommentError,
     Instant createdAt,
     List<ReviewIssue> issues,
     List<String> recommendedTests

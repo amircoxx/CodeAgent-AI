@@ -17,6 +17,7 @@ The app is built to feel like a developer workflow tool rather than a chatbot: r
 - User-owned projects and review history.
 - Manual code review flow saved with `source: "MANUAL"`.
 - GitHub pull request review flow saved with `source: "GITHUB_PR"`.
+- Optional GitHub PR summary comment posting after review approval.
 - GitHub PR metadata display: owner, repo, PR number, URL, and PR title.
 - AI analysis abstraction with a safe mock fallback for local/demo use.
 - Clean JSON error responses for validation, auth, and ownership failures.
@@ -37,7 +38,7 @@ Coming soon. Add real screenshots under [docs/screenshots](docs/screenshots/READ
 ## Resume Highlights
 
 - Built a full-stack AI-powered code review platform using Spring Boot, Next.js, PostgreSQL, and JWT authentication.
-- Integrated GitHub Pull Request analysis by fetching PR diffs, running AI-assisted review, and persisting structured findings.
+- Integrated GitHub Pull Request analysis by fetching PR diffs, running AI-assisted review, persisting structured findings, and optionally posting a summary comment back to GitHub.
 - Implemented user-owned projects and reviews with secure JWT authentication, BCrypt password hashing, and protected API routes.
 - Designed a resilient AI analysis layer with strict JSON validation and mock fallback for local development and demos.
 - Added CI checks, Docker support, health checks, and structured API error handling for production readiness.
@@ -67,6 +68,7 @@ Backend:
 - JPA/PostgreSQL persistence for users, projects, reviews, issues, and recommended tests.
 - `CodeAnalysisService` abstraction supports AI-backed analysis with mock fallback.
 - GitHub PR fetcher parses PR URLs, calls GitHub's REST API, filters noisy patches, and reviews the combined diff.
+- GitHub PR comment posting is opt-in and server-side only, using `CODEGUARD_GITHUB_TOKEN` when explicitly requested.
 - Global exception handling returns consistent JSON errors without leaking stack traces.
 
 Database:
@@ -95,7 +97,8 @@ https://github.com/octocat/Hello-World/pull/1
 7. Open review details.
 8. Observe `Manual` and `GitHub PR` badges.
 9. Confirm GitHub PR metadata appears in the detail view.
-10. Log out and confirm protected UI is hidden.
+10. Optionally request a GitHub PR summary comment when backend comments are configured.
+11. Log out and confirm protected UI is hidden.
 
 ## Demo Script
 
@@ -108,8 +111,9 @@ Narration flow:
 5. Open review history and show the `Manual` and `GitHub PR` badges.
 6. Open review details and walk through risk score, issue severity, explanations, suggestions, and recommended tests.
 7. Show GitHub PR metadata in the detail view.
-8. Mention user ownership: another user cannot see this user's projects or reviews.
-9. Mention repo readiness: backend tests, frontend build, Docker support, health endpoint, and GitHub Actions CI.
+8. Optionally enable the GitHub comment checkbox to post a concise review summary back to the PR.
+9. Mention user ownership: another user cannot see this user's projects or reviews.
+10. Mention repo readiness: backend tests, frontend build, Docker support, health endpoint, and GitHub Actions CI.
 
 Seed demo data with the helper script after the backend is running:
 
@@ -173,6 +177,13 @@ Services:
 - Backend: `localhost:8080`
 - Frontend: `localhost:3000`
 
+If port 3000 is already in use, run Compose with a different host port:
+
+```bash
+cd /Users/amircox/Code/codeguard-ai
+FRONTEND_PORT=3001 docker compose up --build
+```
+
 If Docker reports local storage or Docker Desktop errors, restart Docker Desktop or prune Docker build cache, then rerun the command. The app can still be run in local development mode with only Postgres/Redis in Docker.
 
 ## Environment Variables
@@ -224,15 +235,17 @@ CODEGUARD_GITHUB_API_BASE_URL=https://api.github.com
 CODEGUARD_GITHUB_TIMEOUT_SECONDS=15
 CODEGUARD_GITHUB_MAX_FILES=20
 CODEGUARD_GITHUB_MAX_PATCH_CHARS=30000
+CODEGUARD_GITHUB_COMMENTS_ENABLED=false
 ```
 
 Frontend:
 
 ```bash
+FRONTEND_PORT=3000
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ```
 
-Public GitHub PRs work without a token, subject to GitHub rate limits. Set `CODEGUARD_GITHUB_TOKEN` for higher limits or future private-repository access.
+Public GitHub PR review fetches work without a token, subject to GitHub rate limits. Posting PR comments is opt-in per review and requires `CODEGUARD_GITHUB_COMMENTS_ENABLED=true` plus `CODEGUARD_GITHUB_TOKEN`; the token is used only by the backend and is never sent to the frontend.
 
 ## Deployment
 
@@ -258,21 +271,23 @@ Deployment checklist:
    - `CODEGUARD_AI_MODEL`
    - `CODEGUARD_AI_ENDPOINT`
    - `CODEGUARD_AI_TIMEOUT_SECONDS`
-5. Optionally set `CODEGUARD_GITHUB_TOKEN` for higher GitHub API rate limits or future private repository access.
-6. Deploy the backend and set `PORT` if the hosting platform requires a dynamic port.
-7. Confirm backend health:
+5. Optionally set `CODEGUARD_GITHUB_TOKEN` for higher GitHub API rate limits, future private repository access, or GitHub PR comment posting.
+6. If enabling GitHub PR comments, set:
+   - `CODEGUARD_GITHUB_COMMENTS_ENABLED=true`
+7. Deploy the backend and set `PORT` if the hosting platform requires a dynamic port.
+8. Confirm backend health:
 
 ```bash
 curl https://your-backend.example.com/api/health
 ```
 
-8. Deploy the frontend with:
+9. Deploy the frontend with:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=https://your-backend.example.com
 ```
 
-9. Set backend CORS to the deployed frontend origin:
+10. Set backend CORS to the deployed frontend origin:
 
 ```bash
 CODEGUARD_CORS_ALLOWED_ORIGINS=https://your-frontend.example.com
@@ -284,13 +299,13 @@ For multiple allowed origins, use a comma-separated list:
 CODEGUARD_CORS_ALLOWED_ORIGINS=https://your-frontend.example.com,https://preview.example.com
 ```
 
-10. Test register/login, project creation, manual review, GitHub PR review, and review history.
+11. Test register/login, project creation, manual review, GitHub PR review, optional PR comment posting, and review history.
 
 Production safety notes:
 
 - Do not commit real API keys, database credentials, or JWT secrets.
 - AI can remain disabled; the mock fallback still works for demos.
-- GitHub token is optional for public PRs, but useful for rate limits.
+- GitHub token is optional for public PR review fetches, but required for opt-in PR comment posting.
 - `localStorage` JWT storage is acceptable for this MVP, but secure HTTP-only cookies would be a better production hardening step later.
 - `GET /api/health` is public and intended for deployment health checks.
 
@@ -309,6 +324,46 @@ Frontend:
 cd /Users/amircox/Code/codeguard-ai/frontend
 npm run build
 ```
+
+End-to-end browser tests:
+
+Install Playwright browsers once:
+
+```bash
+cd /Users/amircox/Code/codeguard-ai/frontend
+npx playwright install
+```
+
+Start the local services before running E2E tests:
+
+```bash
+cd /Users/amircox/Code/codeguard-ai
+docker compose up -d postgres redis
+
+cd /Users/amircox/Code/codeguard-ai/backend
+CODEGUARD_AI_ENABLED=false CODEGUARD_GITHUB_COMMENTS_ENABLED=false ./mvnw spring-boot:run
+
+cd /Users/amircox/Code/codeguard-ai/frontend
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080 npm run dev
+```
+
+Run the tests from another terminal:
+
+```bash
+cd /Users/amircox/Code/codeguard-ai/frontend
+PLAYWRIGHT_BASE_URL=http://localhost:3000 npm run test:e2e
+```
+
+Use the interactive runner when debugging:
+
+```bash
+cd /Users/amircox/Code/codeguard-ai/frontend
+PLAYWRIGHT_BASE_URL=http://localhost:3000 npm run test:e2e:ui
+```
+
+The E2E suite covers registration/login/logout, project creation, manual code review, review result/history display, and the GitHub PR review UI path with comment posting left unchecked. The GitHub PR browser test mocks the PR-review API response so it does not require a real GitHub token, real AI, comment posting, or GitHub availability.
+
+E2E is documented as a manual quality check for now. CI currently runs backend tests and the frontend production build; adding E2E to CI should be a separate reliability slice that starts the database, backend, frontend, and any required API stubs deterministically.
 
 Compose validation:
 
@@ -399,6 +454,20 @@ curl -X POST http://localhost:8080/api/github/pull-request-review \
   -d "{\"projectId\":$PROJECT_ID,\"pullRequestUrl\":\"https://github.com/octocat/Hello-World/pull/1\"}"
 ```
 
+GitHub PR review with an opt-in summary comment:
+
+```bash
+TOKEN="<paste_token_here>"
+PROJECT_ID=1
+
+curl -X POST http://localhost:8080/api/github/pull-request-review \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d "{\"projectId\":$PROJECT_ID,\"pullRequestUrl\":\"https://github.com/octocat/Hello-World/pull/1\",\"postComment\":true}"
+```
+
+The comment request saves the review first. If comment posting is disabled, missing a token, or rejected by GitHub, the response still returns the saved review with `githubCommentPosted: false` and a clean `githubCommentError`.
+
 ## Final Verification Checklist
 
 ```bash
@@ -407,6 +476,9 @@ cd /Users/amircox/Code/codeguard-ai/backend
 
 cd /Users/amircox/Code/codeguard-ai/frontend
 npm run build
+
+cd /Users/amircox/Code/codeguard-ai/frontend
+PLAYWRIGHT_BASE_URL=http://localhost:3000 npm run test:e2e
 
 cd /Users/amircox/Code/codeguard-ai
 docker compose config --quiet
@@ -422,6 +494,7 @@ Manual browser verification:
 - Confirm review history includes both reviews.
 - Confirm `Manual` and `GitHub PR` badges appear.
 - Open detail view and inspect issues, severity, suggestions, and recommended tests.
+- For a repository where your backend token can comment, enable the PR comment checkbox and confirm the GitHub comment result appears in the review detail.
 - Refresh the page and confirm saved reviews remain.
 - Log out and confirm protected UI is hidden.
 
@@ -429,7 +502,7 @@ Manual browser verification:
 
 - GitHub OAuth is not implemented yet.
 - GitHub webhooks are not implemented yet.
-- Automatic PR comments are not implemented yet.
+- GitHub PR comments are opt-in only; automatic PR comments are not implemented.
 - Redis is included for future background jobs but not used by current review flows.
 - JWT is stored in `localStorage` for MVP simplicity.
 - Docker full-stack verification can be affected by local Docker Desktop disk/cache state.

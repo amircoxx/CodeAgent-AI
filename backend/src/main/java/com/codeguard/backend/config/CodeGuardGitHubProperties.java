@@ -8,7 +8,8 @@ public record CodeGuardGitHubProperties(
     String apiBaseUrl,
     int timeoutSeconds,
     int maxFiles,
-    int maxPatchChars
+    int maxPatchChars,
+    boolean commentsEnabled
 ) {
 
   public boolean hasToken() {

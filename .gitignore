@@ -5,6 +5,10 @@ node_modules/
 .next/
 out/
 
+# Playwright
+playwright-report/
+test-results/
+
 # Java / Maven
 target/
 .mvn/wrapper/maven-wrapper.jar

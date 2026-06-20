@@ -157,6 +157,24 @@ public class ReviewService {
     return toResponse(review);
   }
 
+  @Transactional
+  public ReviewResponse markGitHubCommentPosted(Long id, String commentUrl) {
+    UserEntity user = currentUserService.getCurrentUser();
+    CodeReviewEntity review = codeReviewRepository.findByIdAndUserId(id, user.getId())
+        .orElseThrow(() -> new ReviewNotFoundException(id));
+    review.markGitHubCommentPosted(blankToNull(commentUrl));
+    return toResponse(review);
+  }
+
+  @Transactional
+  public ReviewResponse markGitHubCommentFailed(Long id, String message) {
+    UserEntity user = currentUserService.getCurrentUser();
+    CodeReviewEntity review = codeReviewRepository.findByIdAndUserId(id, user.getId())
+        .orElseThrow(() -> new ReviewNotFoundException(id));
+    review.markGitHubCommentFailed(message);
+    return toResponse(review);
+  }
+
   private ReviewResponse toResponse(CodeReviewEntity review) {
     return new ReviewResponse(
         review.getId(),
@@ -172,6 +190,9 @@ public class ReviewService {
         review.getGithubPullRequestNumber(),
         review.getGithubPullRequestUrl(),
         review.getGithubPullRequestTitle(),
+        review.isGithubCommentPosted(),
+        review.getGithubCommentUrl(),
+        review.getGithubCommentError(),
         review.getCreatedAt(),
         review.getIssues().stream()
             .map(issue -> new ReviewIssue(
@@ -185,6 +206,10 @@ public class ReviewService {
             .toList(),
         List.copyOf(review.getRecommendedTests())
     );
+  }
+
+  private String blankToNull(String value) {
+    return value == null || value.isBlank() ? null : value;
   }
 
   private record ReviewMetadata(

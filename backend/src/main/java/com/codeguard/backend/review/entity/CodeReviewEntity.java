@@ -65,6 +65,15 @@ public class CodeReviewEntity {
   @Column
   private String githubPullRequestTitle;
 
+  @Column
+  private boolean githubCommentPosted;
+
+  @Column
+  private String githubCommentUrl;
+
+  @Column(columnDefinition = "text")
+  private String githubCommentError;
+
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
@@ -152,6 +161,18 @@ public class CodeReviewEntity {
     return githubPullRequestTitle;
   }
 
+  public boolean isGithubCommentPosted() {
+    return githubCommentPosted;
+  }
+
+  public String getGithubCommentUrl() {
+    return githubCommentUrl;
+  }
+
+  public String getGithubCommentError() {
+    return githubCommentError;
+  }
+
   public Instant getCreatedAt() {
     return createdAt;
   }
@@ -202,5 +223,17 @@ public class CodeReviewEntity {
     this.githubPullRequestNumber = githubPullRequestNumber;
     this.githubPullRequestUrl = githubPullRequestUrl;
     this.githubPullRequestTitle = githubPullRequestTitle;
+  }
+
+  public void markGitHubCommentPosted(String githubCommentUrl) {
+    this.githubCommentPosted = true;
+    this.githubCommentUrl = githubCommentUrl;
+    this.githubCommentError = null;
+  }
+
+  public void markGitHubCommentFailed(String githubCommentError) {
+    this.githubCommentPosted = false;
+    this.githubCommentUrl = null;
+    this.githubCommentError = githubCommentError;
   }
 }

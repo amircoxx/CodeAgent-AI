@@ -20,6 +20,7 @@ export type ReviewRequest = {
 export type GitHubPullRequestReviewRequest = {
   projectId?: number;
   pullRequestUrl: string;
+  postComment?: boolean;
 };
 
 export type ReviewIssue = {
@@ -45,6 +46,9 @@ export type ReviewResponse = {
   githubPullRequestNumber?: number | null;
   githubPullRequestUrl?: string | null;
   githubPullRequestTitle?: string | null;
+  githubCommentPosted: boolean;
+  githubCommentUrl?: string | null;
+  githubCommentError?: string | null;
   createdAt: string;
   issues: ReviewIssue[];
   recommendedTests: string[];

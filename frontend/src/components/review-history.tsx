@@ -100,7 +100,7 @@ export function ReviewHistory({
           </div>
         ) : null}
 
-        <div className="space-y-3">
+        <div className="space-y-3" data-testid="review-history-list">
           {data?.map((review) => {
             const isSelected = review.id === selectedReviewId;
             const risk = riskDisplay(review.riskScore);
@@ -109,6 +109,7 @@ export function ReviewHistory({
             return (
               <button
                 key={review.id}
+                data-testid="review-history-item"
                 type="button"
                 onClick={() => onSelectReview(review.id)}
                 className={[

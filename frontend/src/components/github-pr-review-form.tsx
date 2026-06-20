@@ -46,6 +46,7 @@ export function GitHubPrReviewForm({
   const [pullRequestUrl, setPullRequestUrl] = useState(
     "https://github.com/owner/repo/pull/123",
   );
+  const [postComment, setPostComment] = useState(false);
   const [localError, setLocalError] = useState<string>();
 
   return (
@@ -75,6 +76,7 @@ export function GitHubPrReviewForm({
             onSubmit({
               ...(projectId === noProjectValue ? {} : { projectId: Number(projectId) }),
               pullRequestUrl: trimmedUrl,
+              postComment,
             });
           }}
         >
@@ -118,6 +120,23 @@ export function GitHubPrReviewForm({
               </p>
             ) : null}
           </div>
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-md border border-white/10 bg-slate-900/56 p-3 text-sm text-slate-200">
+            <input
+              checked={postComment}
+              onChange={(event) => setPostComment(event.target.checked)}
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-slate-500 bg-slate-950 text-cyan-300 focus:ring-cyan-300"
+            />
+            <span>
+              <span className="block font-medium text-slate-100">
+                Post review summary comment to GitHub
+              </span>
+              <span className="mt-1 block text-xs leading-5 text-slate-400">
+                Requires backend GitHub comment configuration. The token never leaves the server.
+              </span>
+            </span>
+          </label>
 
           {localError ? (
             <p className="text-sm text-red-200">{localError}</p>

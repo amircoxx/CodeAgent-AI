@@ -4,6 +4,7 @@ import {
   Code2,
   ExternalLink,
   FlaskConical,
+  MessageSquare,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -117,7 +118,7 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
   const repo = repositoryLabel(data);
 
   return (
-    <Card className="border-white/10 bg-slate-950/76 backdrop-blur">
+    <Card className="border-white/10 bg-slate-950/76 backdrop-blur" data-testid="review-results">
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -185,6 +186,30 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
                       {data.githubPullRequestUrl}
                       <ExternalLink className="h-3.5 w-3.5 flex-none" />
                     </a>
+                  </dd>
+                </div>
+              ) : null}
+              {data.githubCommentPosted && data.githubCommentUrl ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-slate-400">GitHub comment</dt>
+                  <dd className="mt-1">
+                    <a
+                      href={data.githubCommentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 break-all font-medium text-emerald-100 hover:text-emerald-50"
+                    >
+                      Comment posted
+                      <ExternalLink className="h-3.5 w-3.5 flex-none" />
+                    </a>
+                  </dd>
+                </div>
+              ) : data.githubCommentError ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-slate-400">GitHub comment</dt>
+                  <dd className="mt-1 flex gap-2 rounded-md border border-amber-300/20 bg-amber-300/10 p-3 text-amber-100">
+                    <MessageSquare className="mt-0.5 h-4 w-4 flex-none" />
+                    <span>{data.githubCommentError}</span>
                   </dd>
                 </div>
               ) : null}

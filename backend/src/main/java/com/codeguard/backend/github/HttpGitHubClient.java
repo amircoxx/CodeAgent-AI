@@ -11,6 +11,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -54,6 +55,16 @@ public class HttpGitHubClient implements GitHubClient {
     return files;
   }
 
+  @Override
+  public String createPullRequestComment(GitHubPullRequestRef pullRequest, String body) {
+    JsonNode root = sendPost(
+        issueCommentsPath(pullRequest),
+        Map.of("body", body)
+    );
+    String htmlUrl = root.path("html_url").asText("");
+    return htmlUrl.isBlank() ? null : htmlUrl;
+  }
+
   private JsonNode sendGet(String path) {
     try {
       HttpRequest.Builder builder = HttpRequest.newBuilder()
@@ -85,8 +96,45 @@ public class HttpGitHubClient implements GitHubClient {
     }
   }
 
+  private JsonNode sendPost(String path, Object payload) {
+    try {
+      HttpRequest.Builder builder = HttpRequest.newBuilder()
+          .uri(URI.create(properties.apiBaseUrl() + path))
+          .timeout(Duration.ofSeconds(properties.timeoutSeconds()))
+          .header("Accept", "application/vnd.github+json")
+          .header("X-GitHub-Api-Version", "2022-11-28")
+          .header("Content-Type", "application/json")
+          .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)));
+
+      if (properties.hasToken()) {
+        builder.header("Authorization", "Bearer " + properties.token());
+      }
+
+      HttpResponse<String> response = httpClient.send(
+          builder.build(),
+          HttpResponse.BodyHandlers.ofString()
+      );
+
+      if (response.statusCode() < 200 || response.statusCode() >= 300) {
+        throw new GitHubFetchException("GitHub returned HTTP " + response.statusCode());
+      }
+
+      return objectMapper.readTree(response.body());
+    } catch (IOException exception) {
+      throw new GitHubFetchException("Could not post pull request comment to GitHub", exception);
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      throw new GitHubFetchException("GitHub request was interrupted", exception);
+    }
+  }
+
   private String pullRequestPath(GitHubPullRequestRef pullRequest) {
     return "/repos/" + pullRequest.owner() + "/" + pullRequest.repo()
         + "/pulls/" + pullRequest.number();
+  }
+
+  private String issueCommentsPath(GitHubPullRequestRef pullRequest) {
+    return "/repos/" + pullRequest.owner() + "/" + pullRequest.repo()
+        + "/issues/" + pullRequest.number() + "/comments";
   }
 }
