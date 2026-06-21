@@ -162,10 +162,11 @@ class ReviewControllerTest {
   }
 
   @Test
-  void getReviewsNormalizesLegacyIssueCategories() throws Exception {
+  void getReviewsNormalizesLegacyIssueValues() throws Exception {
     String token = register("amir@example.com");
     createReview(token, "Legacy Bug Review", "Java", "class LegacyBug {}");
     createReview(token, "Legacy Style Review", "Java", "class LegacyStyle {}");
+    createReview(token, "Unknown Category Review", "Java", "class UnknownCategory {}");
 
     jdbcTemplate.update("""
         update review_issues
@@ -187,6 +188,17 @@ class ReviewControllerTest {
           where cr.title = 'Legacy Style Review'
         )
         """);
+    jdbcTemplate.update("""
+        update review_issues
+        set category = 'CORRECTNESS',
+            severity = 'BLOCKER'
+        where id = (
+          select min(ri.id)
+          from review_issues ri
+          join code_reviews cr on cr.id = ri.code_review_id
+          where cr.title = 'Unknown Category Review'
+        )
+        """);
 
     mockMvc.perform(get("/api/reviews")
             .header("Authorization", "Bearer " + token))
@@ -194,7 +206,11 @@ class ReviewControllerTest {
         .andExpect(jsonPath("$[?(@.title == 'Legacy Bug Review')].issues[0].category")
             .value(org.hamcrest.Matchers.contains("BUG_RISK")))
         .andExpect(jsonPath("$[?(@.title == 'Legacy Style Review')].issues[0].category")
-            .value(org.hamcrest.Matchers.contains("READABILITY")));
+            .value(org.hamcrest.Matchers.contains("READABILITY")))
+        .andExpect(jsonPath("$[?(@.title == 'Unknown Category Review')].issues[0].category")
+            .value(org.hamcrest.Matchers.contains("MAINTAINABILITY")))
+        .andExpect(jsonPath("$[?(@.title == 'Unknown Category Review')].issues[0].severity")
+            .value(org.hamcrest.Matchers.contains("MEDIUM")));
   }
 
   @Test

@@ -4,8 +4,6 @@ import com.codeguard.backend.review.model.IssueCategory;
 import com.codeguard.backend.review.model.Severity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,13 +23,11 @@ public class ReviewIssueEntity {
   @Column(nullable = false)
   private String title;
 
-  @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private Severity severity;
+  private String severity;
 
-  @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private IssueCategory category;
+  private String category;
 
   @Column(nullable = false, columnDefinition = "text")
   private String explanation;
@@ -57,8 +53,8 @@ public class ReviewIssueEntity {
       Integer lineNumber
   ) {
     this.title = title;
-    this.severity = severity;
-    this.category = category;
+    this.severity = severity.name();
+    this.category = category.name();
     this.explanation = explanation;
     this.suggestion = suggestion;
     this.lineNumber = lineNumber;
@@ -73,11 +69,33 @@ public class ReviewIssueEntity {
   }
 
   public Severity getSeverity() {
-    return severity;
+    if (severity == null || severity.isBlank()) {
+      return Severity.MEDIUM;
+    }
+
+    try {
+      return Severity.valueOf(severity);
+    } catch (IllegalArgumentException exception) {
+      return Severity.MEDIUM;
+    }
   }
 
   public IssueCategory getCategory() {
-    return category;
+    if (category == null || category.isBlank()) {
+      return IssueCategory.MAINTAINABILITY;
+    }
+
+    return switch (category) {
+      case "BUG" -> IssueCategory.BUG_RISK;
+      case "STYLE" -> IssueCategory.READABILITY;
+      default -> {
+        try {
+          yield IssueCategory.valueOf(category);
+        } catch (IllegalArgumentException exception) {
+          yield IssueCategory.MAINTAINABILITY;
+        }
+      }
+    };
   }
 
   public String getExplanation() {
