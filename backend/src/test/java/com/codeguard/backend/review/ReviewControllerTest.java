@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -49,6 +50,9 @@ class ReviewControllerTest {
 
   @Autowired
   private UserRepository userRepository;
+
+  @Autowired
+  private JdbcTemplate jdbcTemplate;
 
   @BeforeEach
   void setUp() {
@@ -155,6 +159,42 @@ class ReviewControllerTest {
         .andExpect(jsonPath("$[1].title").value("Older Review"))
         .andExpect(jsonPath("$[0].issues").isArray())
         .andExpect(jsonPath("$[0].recommendedTests").isArray());
+  }
+
+  @Test
+  void getReviewsNormalizesLegacyIssueCategories() throws Exception {
+    String token = register("amir@example.com");
+    createReview(token, "Legacy Bug Review", "Java", "class LegacyBug {}");
+    createReview(token, "Legacy Style Review", "Java", "class LegacyStyle {}");
+
+    jdbcTemplate.update("""
+        update review_issues
+        set category = 'BUG'
+        where id = (
+          select min(ri.id)
+          from review_issues ri
+          join code_reviews cr on cr.id = ri.code_review_id
+          where cr.title = 'Legacy Bug Review'
+        )
+        """);
+    jdbcTemplate.update("""
+        update review_issues
+        set category = 'STYLE'
+        where id = (
+          select min(ri.id)
+          from review_issues ri
+          join code_reviews cr on cr.id = ri.code_review_id
+          where cr.title = 'Legacy Style Review'
+        )
+        """);
+
+    mockMvc.perform(get("/api/reviews")
+            .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[?(@.title == 'Legacy Bug Review')].issues[0].category")
+            .value(org.hamcrest.Matchers.contains("BUG_RISK")))
+        .andExpect(jsonPath("$[?(@.title == 'Legacy Style Review')].issues[0].category")
+            .value(org.hamcrest.Matchers.contains("READABILITY")));
   }
 
   @Test

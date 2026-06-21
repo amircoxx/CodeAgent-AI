@@ -8,6 +8,7 @@ import com.codeguard.backend.review.analysis.CodeAnalysisResult;
 import com.codeguard.backend.review.analysis.CodeAnalysisService;
 import com.codeguard.backend.review.entity.CodeReviewEntity;
 import com.codeguard.backend.review.entity.ReviewIssueEntity;
+import com.codeguard.backend.review.model.IssueCategory;
 import com.codeguard.backend.review.model.ReviewSource;
 import com.codeguard.backend.review.dto.ReviewIssue;
 import com.codeguard.backend.review.dto.ReviewRequest;
@@ -198,7 +199,7 @@ public class ReviewService {
             .map(issue -> new ReviewIssue(
                 issue.getTitle(),
                 issue.getSeverity(),
-                issue.getCategory(),
+                normalizeIssueCategory(issue.getCategory()),
                 issue.getExplanation(),
                 issue.getSuggestion(),
                 issue.getLineNumber()
@@ -210,6 +211,18 @@ public class ReviewService {
 
   private String blankToNull(String value) {
     return value == null || value.isBlank() ? null : value;
+  }
+
+  private IssueCategory normalizeIssueCategory(IssueCategory category) {
+    if (category == null) {
+      return IssueCategory.MAINTAINABILITY;
+    }
+
+    return switch (category) {
+      case BUG -> IssueCategory.BUG_RISK;
+      case STYLE -> IssueCategory.READABILITY;
+      default -> category;
+    };
   }
 
   private record ReviewMetadata(
