@@ -199,6 +199,11 @@ class ReviewControllerTest {
           where cr.title = 'Unknown Category Review'
         )
         """);
+    jdbcTemplate.update("""
+        update code_reviews
+        set source = 'LEGACY_REVIEW'
+        where title = 'Unknown Category Review'
+        """);
 
     mockMvc.perform(get("/api/reviews")
             .header("Authorization", "Bearer " + token))
@@ -210,7 +215,9 @@ class ReviewControllerTest {
         .andExpect(jsonPath("$[?(@.title == 'Unknown Category Review')].issues[0].category")
             .value(org.hamcrest.Matchers.contains("MAINTAINABILITY")))
         .andExpect(jsonPath("$[?(@.title == 'Unknown Category Review')].issues[0].severity")
-            .value(org.hamcrest.Matchers.contains("MEDIUM")));
+            .value(org.hamcrest.Matchers.contains("MEDIUM")))
+        .andExpect(jsonPath("$[?(@.title == 'Unknown Category Review')].source")
+            .value(org.hamcrest.Matchers.contains("MANUAL")));
   }
 
   @Test

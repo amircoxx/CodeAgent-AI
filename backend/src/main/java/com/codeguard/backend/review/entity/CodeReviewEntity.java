@@ -8,8 +8,6 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -46,9 +44,8 @@ public class CodeReviewEntity {
   @Column(nullable = false)
   private int riskScore;
 
-  @Enumerated(EnumType.STRING)
   @Column
-  private ReviewSource source;
+  private String source;
 
   @Column
   private String githubOwner;
@@ -109,7 +106,7 @@ public class CodeReviewEntity {
     this.submittedCode = submittedCode;
     this.summary = summary;
     this.riskScore = riskScore;
-    this.source = ReviewSource.MANUAL;
+    this.source = ReviewSource.MANUAL.name();
     this.createdAt = Instant.now();
   }
 
@@ -138,7 +135,15 @@ public class CodeReviewEntity {
   }
 
   public ReviewSource getSource() {
-    return source == null ? ReviewSource.MANUAL : source;
+    if (source == null || source.isBlank()) {
+      return ReviewSource.MANUAL;
+    }
+
+    try {
+      return ReviewSource.valueOf(source.trim());
+    } catch (IllegalArgumentException exception) {
+      return ReviewSource.MANUAL;
+    }
   }
 
   public String getGithubOwner() {
@@ -217,7 +222,7 @@ public class CodeReviewEntity {
       String githubPullRequestUrl,
       String githubPullRequestTitle
   ) {
-    this.source = ReviewSource.GITHUB_PR;
+    this.source = ReviewSource.GITHUB_PR.name();
     this.githubOwner = githubOwner;
     this.githubRepo = githubRepo;
     this.githubPullRequestNumber = githubPullRequestNumber;
