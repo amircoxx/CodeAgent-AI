@@ -133,7 +133,7 @@ export default function Home() {
 
   useEffect(() => {
     if (meQuery.error) {
-      handleLogout("Your session expired. Please log in again.");
+      handleLogout(meQuery.error.message);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meQuery.error]);

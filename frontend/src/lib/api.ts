@@ -12,6 +12,12 @@ import type {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+const DEFAULT_API_TIMEOUT_MS = 15_000;
+const configuredApiTimeoutMs = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS);
+const API_TIMEOUT_MS =
+  Number.isFinite(configuredApiTimeoutMs) && configuredApiTimeoutMs > 0
+    ? configuredApiTimeoutMs
+    : DEFAULT_API_TIMEOUT_MS;
 
 type ApiErrorResponse = {
   message?: string;
@@ -24,6 +30,30 @@ function authHeaders(token: string): HeadersInit {
   return {
     Authorization: `Bearer ${token}`,
   };
+}
+
+async function request(path: string, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+  try {
+    return await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(
+        "The backend did not respond in time. Please try again in a moment.",
+      );
+    }
+
+    throw new Error(
+      "Could not reach the backend. Check the deployment URL and try again.",
+    );
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 async function parseError(response: Response, fallback: string): Promise<Error> {
@@ -49,7 +79,7 @@ async function parseError(response: Response, fallback: string): Promise<Error> 
 export async function register(
   payload: RegisterRequest,
 ): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+  const response = await request("/api/auth/register", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -65,7 +95,7 @@ export async function register(
 }
 
 export async function login(payload: LoginRequest): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+  const response = await request("/api/auth/login", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -81,7 +111,7 @@ export async function login(payload: LoginRequest): Promise<AuthResponse> {
 }
 
 export async function getMe(token: string): Promise<UserResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+  const response = await request("/api/auth/me", {
     headers: authHeaders(token),
   });
 
@@ -96,7 +126,7 @@ export async function createReview(
   payload: ReviewRequest,
   token: string,
 ): Promise<ReviewResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/reviews`, {
+  const response = await request("/api/reviews", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -116,7 +146,7 @@ export async function createGitHubPullRequestReview(
   payload: GitHubPullRequestReviewRequest,
   token: string,
 ): Promise<ReviewResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/github/pull-request-review`, {
+  const response = await request("/api/github/pull-request-review", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -133,7 +163,7 @@ export async function createGitHubPullRequestReview(
 }
 
 export async function getReviews(token: string): Promise<ReviewResponse[]> {
-  const response = await fetch(`${API_BASE_URL}/api/reviews`, {
+  const response = await request("/api/reviews", {
     headers: authHeaders(token),
   });
 
@@ -145,7 +175,7 @@ export async function getReviews(token: string): Promise<ReviewResponse[]> {
 }
 
 export async function getReview(id: number, token: string): Promise<ReviewResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/reviews/${id}`, {
+  const response = await request(`/api/reviews/${id}`, {
     headers: authHeaders(token),
   });
 
@@ -160,7 +190,7 @@ export async function createProject(
   payload: ProjectRequest,
   token: string,
 ): Promise<ProjectResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/projects`, {
+  const response = await request("/api/projects", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -177,7 +207,7 @@ export async function createProject(
 }
 
 export async function getProjects(token: string): Promise<ProjectResponse[]> {
-  const response = await fetch(`${API_BASE_URL}/api/projects`, {
+  const response = await request("/api/projects", {
     headers: authHeaders(token),
   });
 
@@ -189,7 +219,7 @@ export async function getProjects(token: string): Promise<ProjectResponse[]> {
 }
 
 export async function getProject(id: number, token: string): Promise<ProjectResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
+  const response = await request(`/api/projects/${id}`, {
     headers: authHeaders(token),
   });
 

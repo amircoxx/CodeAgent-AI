@@ -30,3 +30,32 @@ test("user can register, sign out, and sign in again", async ({ page }) => {
   await expect(page.getByText("E2E Auth User")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create a project" })).toBeVisible();
 });
+
+test("stale saved session returns to sign in instead of staying on workspace loading", async ({ page }) => {
+  await page.route("**/api/auth/me", async (route) => {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 250);
+    });
+
+    await route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({
+        message: "Your session expired. Please log in again.",
+        status: 401,
+        path: "/api/auth/me",
+      }),
+    });
+  });
+
+  await page.goto("/");
+  await page.evaluate(() => {
+    window.localStorage.setItem("codeguard.auth.token", "stale-token");
+  });
+  await page.reload();
+
+  await expect(page.getByText("Loading your workspace...")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByText("Your session expired. Please log in again.")).toBeVisible();
+  await expect(page.getByText("Loading your workspace...")).toBeHidden();
+});

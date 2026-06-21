@@ -106,6 +106,7 @@ Environment variable:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=https://<render-backend>.onrender.com
+NEXT_PUBLIC_API_TIMEOUT_MS=15000
 ```
 
 Deploy the frontend and copy the Vercel production URL.
