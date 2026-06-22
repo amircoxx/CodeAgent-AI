@@ -6,6 +6,7 @@ import com.codeguard.backend.auth.dto.RegisterRequest;
 import com.codeguard.backend.user.dto.UserResponse;
 import com.codeguard.backend.user.entity.UserEntity;
 import com.codeguard.backend.user.repository.UserRepository;
+import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,12 @@ public class AuthService {
     if (userRepository.existsActiveByEmail(email)) {
       throw new DuplicateEmailException(email);
     }
+    userRepository.findByEmail(email)
+        .filter(user -> !user.isEnabled() || user.getDeletedAt() != null)
+        .ifPresent(user -> {
+          user.updateEmail(deletedEmailAlias(user));
+          userRepository.saveAndFlush(user);
+        });
 
     UserEntity user = userRepository.save(new UserEntity(
         request.name().trim(),
@@ -72,5 +79,9 @@ public class AuthService {
 
   private String normalizeEmail(String email) {
     return email.trim().toLowerCase();
+  }
+
+  private String deletedEmailAlias(UserEntity user) {
+    return "deleted-" + user.getId() + "-" + UUID.randomUUID() + "@deleted.local";
   }
 }

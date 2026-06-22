@@ -289,9 +289,13 @@ class AuthControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.message").value("Account deleted."));
 
-    UserEntity deletedUser = userRepository.findByEmail("amir@example.com").orElseThrow();
+    UserEntity deletedUser = userRepository.findAll().stream()
+        .filter(user -> !user.isEnabled())
+        .findFirst()
+        .orElseThrow();
     assertThat(deletedUser.isEnabled()).isFalse();
     assertThat(deletedUser.getDeletedAt()).isNotNull();
+    assertThat(deletedUser.getEmail()).isNotEqualTo("amir@example.com");
 
     mockMvc.perform(get("/api/auth/me")
             .header("Authorization", "Bearer " + amirToken))
@@ -306,6 +310,26 @@ class AuthControllerTest {
             .header("Authorization", "Bearer " + taylorToken))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.email").value("taylor@example.com"));
+  }
+
+  @Test
+  void deletedAccountEmailCanBeRegisteredAgain() throws Exception {
+    String token = register("amir@example.com");
+
+    mockMvc.perform(delete("/api/account")
+            .header("Authorization", "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new DeleteAccountJson("password123", "DELETE"))))
+        .andExpect(status().isOk());
+
+    mockMvc.perform(post("/api/auth/register")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new RegisterJson("Amir Cox", "amir@example.com", "password123"))))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.user.email").value("amir@example.com"));
+
+    assertThat(userRepository.findActiveByEmail("amir@example.com")).isPresent();
+    assertThat(userRepository.findAll()).hasSize(2);
   }
 
   private String register(String email) throws Exception {

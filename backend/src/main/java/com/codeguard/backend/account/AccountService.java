@@ -23,6 +23,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -132,6 +133,7 @@ public class AccountService {
     }
 
     verificationRepository.consumeOutstandingForUser(user.getId(), Instant.now());
+    user.updateEmail(deletedEmailAlias(user));
     user.softDelete();
     userRepository.save(user);
     return new MessageResponse(ACCOUNT_DELETED);
@@ -177,5 +179,9 @@ public class AccountService {
 
   private String normalizeEmail(String email) {
     return email.trim().toLowerCase();
+  }
+
+  private String deletedEmailAlias(UserEntity user) {
+    return "deleted-" + user.getId() + "-" + UUID.randomUUID() + "@deleted.local";
   }
 }
