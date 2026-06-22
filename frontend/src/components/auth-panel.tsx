@@ -29,9 +29,9 @@ export function AuthPanel({
   onRegister,
 }: AuthPanelProps) {
   const [mode, setMode] = useState<AuthMode>("login");
-  const [name, setName] = useState("Amir Cox");
-  const [email, setEmail] = useState("amir@example.com");
-  const [password, setPassword] = useState("password123");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState<string>();
 
   const isRegistering = mode === "register";
@@ -136,7 +136,7 @@ export function AuthPanel({
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="Amir Cox"
+                placeholder="Your name"
               />
             </div>
           ) : null}
@@ -151,7 +151,7 @@ export function AuthPanel({
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="amir@example.com"
+              placeholder="you@example.com"
             />
           </div>
 
@@ -165,7 +165,7 @@ export function AuthPanel({
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="password123"
+              placeholder="At least 8 characters"
             />
           </div>
 
