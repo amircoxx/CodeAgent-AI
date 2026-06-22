@@ -33,6 +33,15 @@ public class UserEntity {
   @Column(nullable = false)
   private String passwordHash;
 
+  @Column
+  private Boolean enabled;
+
+  @Column
+  private Integer tokenVersion;
+
+  @Column
+  private Instant deletedAt;
+
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
@@ -52,6 +61,8 @@ public class UserEntity {
     this.name = name;
     this.email = email;
     this.passwordHash = passwordHash;
+    this.enabled = true;
+    this.tokenVersion = 0;
   }
 
   @PrePersist
@@ -59,6 +70,12 @@ public class UserEntity {
     Instant now = Instant.now();
     createdAt = now;
     updatedAt = now;
+    if (enabled == null) {
+      enabled = true;
+    }
+    if (tokenVersion == null) {
+      tokenVersion = 0;
+    }
   }
 
   @PreUpdate
@@ -82,6 +99,18 @@ public class UserEntity {
     return passwordHash;
   }
 
+  public boolean isEnabled() {
+    return enabled == null || enabled;
+  }
+
+  public int getTokenVersion() {
+    return tokenVersion == null ? 0 : tokenVersion;
+  }
+
+  public Instant getDeletedAt() {
+    return deletedAt;
+  }
+
   public Instant getCreatedAt() {
     return createdAt;
   }
@@ -96,5 +125,23 @@ public class UserEntity {
 
   public List<CodeReviewEntity> getReviews() {
     return reviews;
+  }
+
+  public void updatePasswordHash(String passwordHash) {
+    this.passwordHash = passwordHash;
+  }
+
+  public void updateEmail(String email) {
+    this.email = email;
+  }
+
+  public void incrementTokenVersion() {
+    tokenVersion = getTokenVersion() + 1;
+  }
+
+  public void softDelete() {
+    enabled = false;
+    deletedAt = Instant.now();
+    incrementTokenVersion();
   }
 }

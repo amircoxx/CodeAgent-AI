@@ -21,7 +21,7 @@ public class CurrentUserService {
       throw new InvalidCredentialsException();
     }
 
-    return userRepository.findByEmail(authentication.getName())
+    return userRepository.findActiveByEmail(authentication.getName())
         .orElseThrow(InvalidCredentialsException::new);
   }
 }

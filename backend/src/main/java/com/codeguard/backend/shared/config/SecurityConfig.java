@@ -55,7 +55,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
-            .requestMatchers("/api/auth/me").authenticated()
+            .requestMatchers("/api/auth/me", "/api/account/**").authenticated()
             .requestMatchers("/api/projects/**", "/api/reviews/**", "/api/github/**").authenticated()
             .anyRequest().permitAll()
         )
@@ -70,7 +70,7 @@ public class SecurityConfig {
 
   @Bean
   UserDetailsService userDetailsService(UserRepository userRepository) {
-    return email -> userRepository.findByEmail(email)
+    return email -> userRepository.findActiveByEmail(email)
         .map(user -> User.withUsername(user.getEmail())
             .password(user.getPasswordHash())
             .roles("USER")

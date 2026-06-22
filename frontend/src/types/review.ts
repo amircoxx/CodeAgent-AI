@@ -88,3 +88,31 @@ export type AuthResponse = {
   token: string;
   user: UserResponse;
 };
+
+export type MessageResponse = {
+  message: string;
+};
+
+export type PasswordChangeRequestResponse = {
+  message: string;
+  devVerificationCode?: string | null;
+};
+
+export type PasswordVerificationRequest = {
+  verificationCode: string;
+};
+
+export type CompletePasswordChangeRequest = {
+  verificationCode: string;
+  newPassword: string;
+};
+
+export type UpdateEmailRequest = {
+  email: string;
+  currentPassword: string;
+};
+
+export type DeleteAccountRequest = {
+  currentPassword: string;
+  confirmation: string;
+};

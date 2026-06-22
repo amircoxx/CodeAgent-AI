@@ -1,6 +1,7 @@
 package com.codeguard.backend.auth;
 
 import com.codeguard.backend.shared.config.JwtProperties;
+import com.codeguard.backend.user.entity.UserEntity;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -28,14 +29,15 @@ public class JwtService {
     this.objectMapper = objectMapper;
   }
 
-  public String generateToken(String email) {
+  public String generateToken(UserEntity user) {
     long now = Instant.now().toEpochMilli();
     Map<String, Object> header = Map.of(
         "alg", "HS256",
         "typ", "JWT"
     );
     Map<String, Object> payload = new LinkedHashMap<>();
-    payload.put("sub", email);
+    payload.put("sub", user.getEmail());
+    payload.put("ver", user.getTokenVersion());
     payload.put("iat", now / 1000);
     payload.put("exp", (now + properties.expirationMs()) / 1000);
 
@@ -72,6 +74,16 @@ public class JwtService {
       throw new IllegalArgumentException("JWT subject is missing");
     }
     return email;
+  }
+
+  public int extractTokenVersion(String token) {
+    String[] segments = splitToken(token);
+    Map<String, Object> payload = parsePayload(segments[1]);
+    Object version = payload.get("ver");
+    if (version instanceof Number number) {
+      return number.intValue();
+    }
+    return 0;
   }
 
   private String encodeJson(Map<String, Object> value) {

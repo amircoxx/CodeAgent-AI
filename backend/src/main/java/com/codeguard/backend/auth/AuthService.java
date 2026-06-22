@@ -33,7 +33,7 @@ public class AuthService {
   @Transactional
   public AuthResponse register(RegisterRequest request) {
     String email = normalizeEmail(request.email());
-    if (userRepository.existsByEmail(email)) {
+    if (userRepository.existsActiveByEmail(email)) {
       throw new DuplicateEmailException(email);
     }
 
@@ -48,7 +48,7 @@ public class AuthService {
   @Transactional(readOnly = true)
   public AuthResponse login(LoginRequest request) {
     String email = normalizeEmail(request.email());
-    UserEntity user = userRepository.findByEmail(email)
+    UserEntity user = userRepository.findActiveByEmail(email)
         .orElseThrow(InvalidCredentialsException::new);
     if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
       throw new InvalidCredentialsException();
@@ -63,7 +63,7 @@ public class AuthService {
   }
 
   private AuthResponse toAuthResponse(UserEntity user) {
-    return new AuthResponse(jwtService.generateToken(user.getEmail()), toUserResponse(user));
+    return new AuthResponse(jwtService.generateToken(user), toUserResponse(user));
   }
 
   private UserResponse toUserResponse(UserEntity user) {

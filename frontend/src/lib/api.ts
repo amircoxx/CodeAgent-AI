@@ -1,12 +1,18 @@
 import type {
   AuthResponse,
+  CompletePasswordChangeRequest,
+  DeleteAccountRequest,
   GitHubPullRequestReviewRequest,
   LoginRequest,
+  MessageResponse,
+  PasswordChangeRequestResponse,
+  PasswordVerificationRequest,
   ProjectRequest,
   ProjectResponse,
   RegisterRequest,
   ReviewRequest,
   ReviewResponse,
+  UpdateEmailRequest,
   UserResponse,
 } from "@/types/review";
 
@@ -120,6 +126,101 @@ export async function getMe(token: string): Promise<UserResponse> {
   }
 
   return response.json() as Promise<UserResponse>;
+}
+
+export async function requestPasswordChange(
+  token: string,
+): Promise<PasswordChangeRequestResponse> {
+  const response = await request("/api/account/password-change/request", {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Could not request password verification.");
+  }
+
+  return response.json() as Promise<PasswordChangeRequestResponse>;
+}
+
+export async function verifyPasswordChange(
+  payload: PasswordVerificationRequest,
+  token: string,
+): Promise<MessageResponse> {
+  const response = await request("/api/account/password-change/verify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(token),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Could not verify password code.");
+  }
+
+  return response.json() as Promise<MessageResponse>;
+}
+
+export async function completePasswordChange(
+  payload: CompletePasswordChangeRequest,
+  token: string,
+): Promise<MessageResponse> {
+  const response = await request("/api/account/password-change/complete", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(token),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Could not update password.");
+  }
+
+  return response.json() as Promise<MessageResponse>;
+}
+
+export async function updateAccountEmail(
+  payload: UpdateEmailRequest,
+  token: string,
+): Promise<AuthResponse> {
+  const response = await request("/api/account/email", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(token),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Could not update email.");
+  }
+
+  return response.json() as Promise<AuthResponse>;
+}
+
+export async function deleteAccount(
+  payload: DeleteAccountRequest,
+  token: string,
+): Promise<MessageResponse> {
+  const response = await request("/api/account", {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(token),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Could not delete account.");
+  }
+
+  return response.json() as Promise<MessageResponse>;
 }
 
 export async function createReview(

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { AccountSettings } from "@/components/account-settings";
 import { AuthPanel } from "@/components/auth-panel";
 import { CodeReviewForm } from "@/components/code-review-form";
 import { GitHubPrReviewForm } from "@/components/github-pr-review-form";
@@ -203,6 +204,12 @@ export default function Home() {
                   isPending={projectMutation.isPending}
                   error={projectMutation.error}
                   onSubmit={(payload) => projectMutation.mutate(payload)}
+                />
+                <AccountSettings
+                  token={token}
+                  currentEmail={meQuery.data?.email ?? ""}
+                  onAuthRefresh={handleAuthSuccess}
+                  onLogout={handleLogout}
                 />
                 <CodeReviewForm
                   isPending={reviewMutation.isPending}
