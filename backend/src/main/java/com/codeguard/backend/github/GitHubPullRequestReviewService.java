@@ -1,6 +1,6 @@
 package com.codeguard.backend.github;
 
-import com.codeguard.backend.config.CodeGuardGitHubProperties;
+import com.codeguard.backend.shared.config.CodeGuardGitHubProperties;
 import com.codeguard.backend.review.ReviewService;
 import com.codeguard.backend.review.dto.ReviewIssue;
 import com.codeguard.backend.review.dto.ReviewResponse;

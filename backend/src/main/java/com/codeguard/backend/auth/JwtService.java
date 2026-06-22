@@ -1,6 +1,6 @@
 package com.codeguard.backend.auth;
 
-import com.codeguard.backend.config.JwtProperties;
+import com.codeguard.backend.shared.config.JwtProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;

@@ -1,4 +1,4 @@
-package com.codeguard.backend.config;
+package com.codeguard.backend.shared.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

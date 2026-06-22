@@ -1,7 +1,7 @@
-package com.codeguard.backend.config;
+package com.codeguard.backend.shared.config;
 
 import com.codeguard.backend.auth.JwtAuthenticationFilter;
-import com.codeguard.backend.error.ApiErrorResponse;
+import com.codeguard.backend.shared.error.ApiErrorResponse;
 import com.codeguard.backend.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;

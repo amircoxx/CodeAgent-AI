@@ -1,6 +1,6 @@
 package com.codeguard.backend.review.analysis;
 
-import com.codeguard.backend.config.CodeGuardAiProperties;
+import com.codeguard.backend.shared.config.CodeGuardAiProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

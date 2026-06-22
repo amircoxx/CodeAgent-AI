@@ -1,6 +1,6 @@
 package com.codeguard.backend.review.analysis;
 
-import com.codeguard.backend.config.CodeGuardAiProperties;
+import com.codeguard.backend.shared.config.CodeGuardAiProperties;
 import com.codeguard.backend.review.dto.ReviewIssue;
 import com.codeguard.backend.review.dto.ReviewRequest;
 import com.codeguard.backend.review.model.IssueCategory;

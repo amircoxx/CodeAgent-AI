@@ -1,4 +1,4 @@
-package com.codeguard.backend.health;
+package com.codeguard.backend.shared.health;
 
 import java.time.Instant;
 import org.springframework.web.bind.annotation.GetMapping;

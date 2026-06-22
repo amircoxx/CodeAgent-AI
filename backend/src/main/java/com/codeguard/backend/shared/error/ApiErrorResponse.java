@@ -1,4 +1,4 @@
-package com.codeguard.backend.error;
+package com.codeguard.backend.shared.error;
 
 import java.time.Instant;
 

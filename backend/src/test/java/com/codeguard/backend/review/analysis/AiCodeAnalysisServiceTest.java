@@ -2,7 +2,7 @@ package com.codeguard.backend.review.analysis;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.codeguard.backend.config.CodeGuardAiProperties;
+import com.codeguard.backend.shared.config.CodeGuardAiProperties;
 import com.codeguard.backend.review.dto.ReviewRequest;
 import com.codeguard.backend.review.model.IssueCategory;
 import com.codeguard.backend.review.model.Severity;
