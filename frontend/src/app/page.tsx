@@ -37,6 +37,7 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [token, setToken] = useState<string>();
   const [selectedReviewId, setSelectedReviewId] = useState<number>();
+  const [submittedReview, setSubmittedReview] = useState<ReviewResponse>();
   const [sessionMessage, setSessionMessage] = useState<string>();
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function Home() {
     setSessionMessage(message);
     setToken(undefined);
     setSelectedReviewId(undefined);
+    setSubmittedReview(undefined);
     queryClient.clear();
   };
 
@@ -88,8 +90,12 @@ export default function Home() {
 
   const reviewMutation = useMutation<ReviewResponse, Error, ReviewRequest>({
     mutationFn: (payload) => createReview(payload, token as string),
+    onMutate: () => {
+      setSubmittedReview(undefined);
+    },
     onSuccess: (review) => {
-      setSelectedReviewId(review.id);
+      setSubmittedReview(review);
+      setSelectedReviewId(undefined);
       queryClient.invalidateQueries({ queryKey: ["reviews", token] });
       queryClient.setQueryData(["reviews", token, review.id], review);
     },
@@ -97,8 +103,12 @@ export default function Home() {
 
   const githubReviewMutation = useMutation<ReviewResponse, Error, GitHubPullRequestReviewRequest>({
     mutationFn: (payload) => createGitHubPullRequestReview(payload, token as string),
+    onMutate: () => {
+      setSubmittedReview(undefined);
+    },
     onSuccess: (review) => {
-      setSelectedReviewId(review.id);
+      setSubmittedReview(review);
+      setSelectedReviewId(undefined);
       queryClient.invalidateQueries({ queryKey: ["reviews", token] });
       queryClient.setQueryData(["reviews", token, review.id], review);
     },
@@ -121,9 +131,13 @@ export default function Home() {
     onSuccess: handleAuthSuccess,
   });
 
-  const activeReview = selectedReviewQuery.data ?? githubReviewMutation.data ?? reviewMutation.data;
+  const activeReview = selectedReviewQuery.data ?? submittedReview;
   const activeError =
-    selectedReviewQuery.error ?? githubReviewMutation.error ?? reviewMutation.error;
+    submittedReview && selectedReviewId === undefined
+      ? null
+      : githubReviewMutation.error ??
+        reviewMutation.error ??
+        (selectedReviewId === undefined ? null : selectedReviewQuery.error);
   const isReviewLoading =
     reviewMutation.isPending || githubReviewMutation.isPending || selectedReviewQuery.isFetching;
   const authError =
@@ -217,7 +231,10 @@ export default function Home() {
               error={reviewsQuery.error}
               isLoading={reviewsQuery.isLoading}
               selectedReviewId={selectedReviewId}
-              onSelectReview={setSelectedReviewId}
+              onSelectReview={(id) => {
+                setSelectedReviewId(id);
+                setSubmittedReview(undefined);
+              }}
             />
           </>
         )}
