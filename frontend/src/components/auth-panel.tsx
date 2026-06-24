@@ -38,9 +38,9 @@ export function AuthPanel({
   const displayError = localError ?? error?.message;
 
   return (
-    <Card className="max-w-xl border-white/10 bg-slate-950/80 backdrop-blur">
+    <Card className="max-w-xl">
       <CardHeader>
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md border border-emerald-300/25 bg-emerald-300/10 text-emerald-200">
+        <div className="ledger-icon mb-3 flex h-10 w-10 items-center justify-center rounded">
           <LockKeyhole className="h-5 w-5" />
         </div>
         <CardTitle>{isRegistering ? "Create your account" : "Sign in"}</CardTitle>
@@ -49,12 +49,12 @@ export function AuthPanel({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-5 grid grid-cols-2 rounded-md border border-white/10 bg-slate-900/70 p-1">
+        <div className="mb-5 grid grid-cols-2 rounded border border-[#25251e] bg-[#eee7d8] p-1">
           <button
             className={`rounded px-3 py-2 text-sm font-medium transition ${
               mode === "login"
-                ? "bg-emerald-300 text-slate-950"
-                : "text-slate-300 hover:text-white"
+                ? "bg-[#171711] text-[#fffdf8]"
+                : "text-[#4f4b41] hover:bg-[#fffdf8] hover:text-[#171711]"
             }`}
             type="button"
             onClick={() => {
@@ -67,8 +67,8 @@ export function AuthPanel({
           <button
             className={`rounded px-3 py-2 text-sm font-medium transition ${
               mode === "register"
-                ? "bg-emerald-300 text-slate-950"
-                : "text-slate-300 hover:text-white"
+                ? "bg-[#171711] text-[#fffdf8]"
+                : "text-[#4f4b41] hover:bg-[#fffdf8] hover:text-[#171711]"
             }`}
             type="button"
             onClick={() => {
@@ -128,21 +128,21 @@ export function AuthPanel({
         >
           {isRegistering ? (
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-200" htmlFor="auth-name">
+              <label className="text-sm font-bold text-[#25251e]" htmlFor="auth-name">
                 Name
               </label>
               <input
                 id="auth-name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Your name"
               />
             </div>
           ) : null}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200" htmlFor="auth-email">
+            <label className="text-sm font-bold text-[#25251e]" htmlFor="auth-email">
               Email
             </label>
             <input
@@ -150,13 +150,13 @@ export function AuthPanel({
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="you@example.com"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200" htmlFor="auth-password">
+            <label className="text-sm font-bold text-[#25251e]" htmlFor="auth-password">
               Password
             </label>
             <input
@@ -164,13 +164,13 @@ export function AuthPanel({
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="At least 8 characters"
             />
           </div>
 
           {displayError ? (
-            <p className="text-sm text-red-200">{displayError}</p>
+            <p className="text-sm font-bold text-[#8d281f]">{displayError}</p>
           ) : null}
 
           <Button className="w-full" disabled={isPending} type="submit" size="lg">

@@ -70,12 +70,12 @@ function repositoryLabel(data: ReviewResponse): string | undefined {
 export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
   if (isPending) {
     return (
-      <Card className="min-h-[645px] border-white/10 bg-slate-950/70 backdrop-blur">
+      <Card className="min-h-[645px]">
         <CardContent className="flex min-h-[645px] flex-col items-center justify-center gap-4 text-center">
-          <div className="h-12 w-12 animate-pulse rounded-md border border-cyan-300/25 bg-cyan-300/10" />
+          <div className="h-12 w-12 animate-pulse rounded border border-[#25251e] bg-[#bf3b2d]/15 shadow-[4px_4px_0_rgba(23,23,17,0.12)]" />
           <div>
-            <h2 className="text-lg font-semibold">Review in progress</h2>
-            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+            <h2 className="font-display text-xl font-semibold text-[#171711]">Review in progress</h2>
+            <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
               The frontend is calling the Spring Boot API and waiting for the
               structured review payload.
             </p>
@@ -87,11 +87,11 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
 
   if (error) {
     return (
-      <Card className="border-red-400/20 bg-red-950/20 backdrop-blur">
+      <Card className="border-[#bf3b2d] bg-[#f1d7d1]">
         <CardContent className="flex min-h-[260px] flex-col justify-center gap-3">
-          <AlertCircle className="h-6 w-6 text-red-200" />
-          <h2 className="text-lg font-semibold text-red-100">Review request failed</h2>
-          <p className="text-sm text-red-100/75">{error.message}</p>
+          <AlertCircle className="h-6 w-6 text-[#8d281f]" />
+          <h2 className="font-display text-xl font-semibold text-[#8d281f]">Review request failed</h2>
+          <p className="text-sm font-medium text-[#8d281f]">{error.message}</p>
         </CardContent>
       </Card>
     );
@@ -99,12 +99,12 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
 
   if (!data) {
     return (
-      <Card className="min-h-[645px] border-white/10 bg-slate-950/70 backdrop-blur">
+      <Card className="min-h-[645px]">
         <CardContent className="flex min-h-[645px] flex-col items-center justify-center gap-4 text-center">
-          <Code2 className="h-10 w-10 text-cyan-200" />
+          <Code2 className="h-10 w-10 text-[#315f72]" />
           <div>
-            <h2 className="text-lg font-semibold">Awaiting analysis</h2>
-            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+            <h2 className="font-display text-xl font-semibold text-[#171711]">Awaiting analysis</h2>
+            <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
               Select a saved review or submit code to see the summary, risk
               score, issues, and recommended tests.
             </p>
@@ -118,10 +118,10 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
   const repo = repositoryLabel(data);
 
   return (
-    <Card className="border-white/10 bg-slate-950/76 backdrop-blur" data-testid="review-results">
+    <Card data-testid="review-results">
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+          <div className="max-w-2xl">
             <CardTitle>{data.title}</CardTitle>
             <CardDescription>{data.summary}</CardDescription>
           </div>
@@ -146,42 +146,42 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
         </div>
 
         {data.source === "GITHUB_PR" ? (
-          <div className="rounded-md border border-cyan-300/15 bg-cyan-300/10 p-4">
-            <h3 className="text-sm font-semibold text-cyan-50">
+          <div className="rounded border border-[#315f72] bg-[#dce8eb] p-4">
+            <h3 className="text-sm font-extrabold text-[#214756]">
               GitHub pull request
             </h3>
             <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
               {repo ? (
                 <div>
-                  <dt className="text-slate-400">Repository</dt>
-                  <dd className="mt-1 font-medium text-slate-100">{repo}</dd>
+                  <dt className="text-[#6a6659]">Repository</dt>
+                  <dd className="mt-1 font-bold text-[#171711]">{repo}</dd>
                 </div>
               ) : null}
               {data.githubPullRequestNumber ? (
                 <div>
-                  <dt className="text-slate-400">Pull request number</dt>
-                  <dd className="mt-1 font-medium text-slate-100">
+                  <dt className="text-[#6a6659]">Pull request number</dt>
+                  <dd className="mt-1 font-bold text-[#171711]">
                     #{data.githubPullRequestNumber}
                   </dd>
                 </div>
               ) : null}
               {data.githubPullRequestTitle ? (
                 <div className="sm:col-span-2">
-                  <dt className="text-slate-400">Pull request title</dt>
-                  <dd className="mt-1 font-medium text-slate-100">
+                  <dt className="text-[#6a6659]">Pull request title</dt>
+                  <dd className="mt-1 font-bold text-[#171711]">
                     {data.githubPullRequestTitle}
                   </dd>
                 </div>
               ) : null}
               {data.githubPullRequestUrl ? (
                 <div className="sm:col-span-2">
-                  <dt className="text-slate-400">Pull request URL</dt>
+                  <dt className="text-[#6a6659]">Pull request URL</dt>
                   <dd className="mt-1">
                     <a
                       href={data.githubPullRequestUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 break-all font-medium text-cyan-100 hover:text-cyan-50"
+                      className="inline-flex items-center gap-2 break-all font-bold text-[#315f72] hover:text-[#214756]"
                     >
                       {data.githubPullRequestUrl}
                       <ExternalLink className="h-3.5 w-3.5 flex-none" />
@@ -191,13 +191,13 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
               ) : null}
               {data.githubCommentPosted && data.githubCommentUrl ? (
                 <div className="sm:col-span-2">
-                  <dt className="text-slate-400">GitHub comment</dt>
+                  <dt className="text-[#6a6659]">GitHub comment</dt>
                   <dd className="mt-1">
                     <a
                       href={data.githubCommentUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 break-all font-medium text-emerald-100 hover:text-emerald-50"
+                      className="inline-flex items-center gap-2 break-all font-bold text-[#3f5821] hover:text-[#2f4318]"
                     >
                       Comment posted
                       <ExternalLink className="h-3.5 w-3.5 flex-none" />
@@ -206,8 +206,8 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
                 </div>
               ) : data.githubCommentError ? (
                 <div className="sm:col-span-2">
-                  <dt className="text-slate-400">GitHub comment</dt>
-                  <dd className="mt-1 flex gap-2 rounded-md border border-amber-300/20 bg-amber-300/10 p-3 text-amber-100">
+                  <dt className="text-[#6a6659]">GitHub comment</dt>
+                  <dd className="mt-1 flex gap-2 rounded border border-[#aa7a1d] bg-[#f3e5be] p-3 text-[#735116]">
                     <MessageSquare className="mt-0.5 h-4 w-4 flex-none" />
                     <span>{data.githubCommentError}</span>
                   </dd>
@@ -223,7 +223,7 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
           {data.issues.map((issue) => (
             <div
               key={`${issue.category}-${issue.title}`}
-              className="rounded-lg border border-white/10 bg-slate-900/68 p-4"
+              className="rounded border border-[#bdb5a1] bg-[#fffdf8] p-4 shadow-[4px_4px_0_rgba(23,23,17,0.06)]"
             >
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">{issue.category}</Badge>
@@ -231,16 +231,16 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
                   {issue.severity}
                 </Badge>
               </div>
-              <h3 className="font-semibold text-slate-100">{issue.title}</h3>
+              <h3 className="font-display text-lg font-semibold text-[#171711]">{issue.title}</h3>
               {issue.lineNumber ? (
-                <p className="mt-1 text-xs font-medium text-cyan-200">
+                <p className="mt-1 text-xs font-extrabold uppercase tracking-[0.12em] text-[#315f72]">
                   Line {issue.lineNumber}
                 </p>
               ) : null}
-              <p className="mt-2 text-sm leading-6 text-slate-300">
+              <p className="mt-2 text-sm leading-6 text-[#4f4b41]">
                 {issue.explanation}
               </p>
-              <div className="mt-3 flex gap-2 rounded-md border border-emerald-300/15 bg-emerald-300/10 p-3 text-sm text-emerald-100">
+              <div className="mt-3 flex gap-2 rounded border border-[#5e7b37] bg-[#e8eedb] p-3 text-sm font-medium text-[#3f5821]">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none" />
                 <span>{issue.suggestion}</span>
               </div>
@@ -250,8 +250,8 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
 
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <FlaskConical className="h-4 w-4 text-cyan-200" />
-            <h3 className="text-sm font-semibold text-slate-200">
+            <FlaskConical className="h-4 w-4 text-[#315f72]" />
+            <h3 className="text-sm font-extrabold uppercase tracking-[0.12em] text-[#25251e]">
               Recommended tests
             </h3>
           </div>
@@ -259,7 +259,7 @@ export function ReviewResults({ data, error, isPending }: ReviewResultsProps) {
             {data.recommendedTests.map((test) => (
               <div
                 key={test}
-                className="rounded-md border border-cyan-300/15 bg-cyan-300/10 p-3 text-sm text-cyan-50"
+                className="rounded border border-[#315f72] bg-[#dce8eb] p-3 text-sm font-medium text-[#214756]"
               >
                 {test}
               </div>

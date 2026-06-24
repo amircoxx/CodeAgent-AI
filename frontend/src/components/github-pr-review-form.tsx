@@ -50,9 +50,9 @@ export function GitHubPrReviewForm({
   const [localError, setLocalError] = useState<string>();
 
   return (
-    <Card className="border-white/10 bg-slate-950/76 backdrop-blur">
+    <Card>
       <CardHeader>
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md border border-cyan-300/25 bg-cyan-300/10 text-cyan-100">
+        <div className="ledger-icon mb-3 flex h-10 w-10 items-center justify-center rounded">
           <GitPullRequest className="h-5 w-5" />
         </div>
         <CardTitle>Review a GitHub pull request</CardTitle>
@@ -81,24 +81,24 @@ export function GitHubPrReviewForm({
           }}
         >
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200" htmlFor="pull-request-url">
+            <label className="text-sm font-bold text-[#25251e]" htmlFor="pull-request-url">
               Pull request URL
             </label>
             <input
               id="pull-request-url"
               value={pullRequestUrl}
               onChange={(event) => setPullRequestUrl(event.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="https://github.com/owner/repo/pull/123"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200" htmlFor="github-project">
+            <label className="text-sm font-bold text-[#25251e]" htmlFor="github-project">
               Project
             </label>
             <Select value={projectId} onValueChange={setProjectId}>
-              <SelectTrigger id="github-project" className="bg-slate-950/80">
+              <SelectTrigger id="github-project">
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
               <SelectContent>
@@ -111,35 +111,35 @@ export function GitHubPrReviewForm({
               </SelectContent>
             </Select>
             {areProjectsLoading ? (
-              <p className="text-xs text-slate-400">Loading projects...</p>
+              <p className="text-xs text-[#6a6659]">Loading projects...</p>
             ) : projectsError ? (
-              <p className="text-xs text-red-200">{projectsError.message}</p>
+              <p className="text-xs font-bold text-[#8d281f]">{projectsError.message}</p>
             ) : projects?.length === 0 ? (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#6a6659]">
                 No projects yet. PR reviews can still be submitted without one.
               </p>
             ) : null}
           </div>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-md border border-white/10 bg-slate-900/56 p-3 text-sm text-slate-200">
+          <label className="flex cursor-pointer items-start gap-3 rounded border border-[#bdb5a1] bg-[#f2eee2] p-3 text-sm text-[#25251e]">
             <input
               checked={postComment}
               onChange={(event) => setPostComment(event.target.checked)}
               type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded border-slate-500 bg-slate-950 text-cyan-300 focus:ring-cyan-300"
+              className="mt-0.5 h-4 w-4 rounded border-[#8c8574] bg-[#fffdf8] text-[#bf3b2d] focus:ring-[#bf3b2d]"
             />
             <span>
-              <span className="block font-medium text-slate-100">
+              <span className="block font-bold text-[#171711]">
                 Post review summary comment to GitHub
               </span>
-              <span className="mt-1 block text-xs leading-5 text-slate-400">
+              <span className="mt-1 block text-xs leading-5 text-[#6a6659]">
                 Requires backend GitHub comment configuration. The token never leaves the server.
               </span>
             </span>
           </label>
 
           {localError ? (
-            <p className="text-sm text-red-200">{localError}</p>
+            <p className="text-sm font-bold text-[#8d281f]">{localError}</p>
           ) : null}
 
           <Button className="w-full" disabled={isPending} type="submit" size="lg">

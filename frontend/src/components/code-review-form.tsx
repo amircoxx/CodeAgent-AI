@@ -49,9 +49,9 @@ export function CodeReviewForm({
   const [localError, setLocalError] = useState<string>();
 
   return (
-    <Card className="border-white/10 bg-slate-950/76 backdrop-blur">
+    <Card>
       <CardHeader>
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md border border-emerald-300/25 bg-emerald-300/10 text-emerald-200">
+        <div className="ledger-icon mb-3 flex h-10 w-10 items-center justify-center rounded">
           <ShieldCheck className="h-5 w-5" />
         </div>
         <CardTitle>Analyze a code snippet</CardTitle>
@@ -91,24 +91,24 @@ export function CodeReviewForm({
           }}
         >
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200" htmlFor="title">
+            <label className="text-sm font-bold text-[#25251e]" htmlFor="title">
               Review title
             </label>
             <input
               id="title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="Login Controller Review"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200" htmlFor="project">
+            <label className="text-sm font-bold text-[#25251e]" htmlFor="project">
               Project
             </label>
             <Select value={projectId} onValueChange={setProjectId}>
-              <SelectTrigger id="project" className="bg-slate-950/80">
+              <SelectTrigger id="project">
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
               <SelectContent>
@@ -121,22 +121,22 @@ export function CodeReviewForm({
               </SelectContent>
             </Select>
             {areProjectsLoading ? (
-              <p className="text-xs text-slate-400">Loading projects...</p>
+              <p className="text-xs text-[#6a6659]">Loading projects...</p>
             ) : projectsError ? (
-              <p className="text-xs text-red-200">{projectsError.message}</p>
+              <p className="text-xs font-bold text-[#8d281f]">{projectsError.message}</p>
             ) : projects?.length === 0 ? (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#6a6659]">
                 No projects yet. Reviews can still be submitted without one.
               </p>
             ) : null}
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200" htmlFor="language">
+            <label className="text-sm font-bold text-[#25251e]" htmlFor="language">
               Language
             </label>
             <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger id="language" className="bg-slate-950/80">
+              <SelectTrigger id="language">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
@@ -150,7 +150,7 @@ export function CodeReviewForm({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200" htmlFor="code">
+            <label className="text-sm font-bold text-[#25251e]" htmlFor="code">
               Code
             </label>
             <Textarea
@@ -158,13 +158,13 @@ export function CodeReviewForm({
               value={code}
               onChange={(event) => setCode(event.target.value)}
               spellCheck={false}
-              className="min-h-[410px] resize-none bg-slate-950/80 font-mono text-[13px] leading-6 text-slate-100"
+              className="audit-code min-h-[410px] resize-none rounded font-mono text-[13px] leading-6"
               placeholder="Paste code to review..."
             />
           </div>
 
           {localError ? (
-            <p className="text-sm text-red-200">{localError}</p>
+            <p className="text-sm font-bold text-[#8d281f]">{localError}</p>
           ) : null}
 
           <Button className="w-full" disabled={isPending} type="submit" size="lg">

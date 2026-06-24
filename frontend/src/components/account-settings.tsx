@@ -110,18 +110,18 @@ export function AccountSettings({
     requestMutation.isPending || verifyMutation.isPending || completeMutation.isPending;
 
   return (
-    <Card className="border-white/10 bg-slate-950/76">
+    <Card>
       <CardHeader>
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md border border-cyan-300/25 bg-cyan-300/10 text-cyan-100">
+        <div className="ledger-icon mb-3 flex h-10 w-10 items-center justify-center rounded">
           <ShieldCheck className="h-5 w-5" />
         </div>
         <CardTitle id="account-settings-title">Account security</CardTitle>
         <CardDescription>Manage sign-in credentials for this workspace.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <section className="space-y-3 border-b border-white/10 pb-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
-            <KeyRound className="h-4 w-4 text-emerald-200" />
+        <section className="space-y-3 border-b border-[#bdb5a1] pb-5">
+          <div className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.1em] text-[#25251e]">
+            <KeyRound className="h-4 w-4 text-[#315f72]" />
             Password
           </div>
           <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -151,7 +151,7 @@ export function AccountSettings({
           <input
             value={passwordCode}
             onChange={(event) => setPasswordCode(event.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="Verification code"
           />
           <form
@@ -176,20 +176,20 @@ export function AccountSettings({
               type="password"
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="New password"
             />
             <Button type="submit" disabled={isPasswordPending}>
               Update password
             </Button>
           </form>
-          {passwordError ? <p className="text-sm text-red-200">{passwordError}</p> : null}
-          {passwordMessage ? <p className="text-sm text-emerald-200">{passwordMessage}</p> : null}
+          {passwordError ? <p className="text-sm font-bold text-[#8d281f]">{passwordError}</p> : null}
+          {passwordMessage ? <p className="text-sm font-bold text-[#3f5821]">{passwordMessage}</p> : null}
         </section>
 
-        <section className="space-y-3 border-b border-white/10 pb-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
-            <Mail className="h-4 w-4 text-cyan-200" />
+        <section className="space-y-3 border-b border-[#bdb5a1] pb-5">
+          <div className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.1em] text-[#25251e]">
+            <Mail className="h-4 w-4 text-[#315f72]" />
             Email
           </div>
           <form
@@ -214,7 +214,7 @@ export function AccountSettings({
               type="email"
               value={newEmail}
               onChange={(event) => setNewEmail(event.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="you@example.com"
             />
             <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -222,7 +222,7 @@ export function AccountSettings({
                 type="password"
                 value={emailPassword}
                 onChange={(event) => setEmailPassword(event.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Current password"
               />
               <Button type="submit" disabled={emailMutation.isPending}>
@@ -230,13 +230,13 @@ export function AccountSettings({
               </Button>
             </div>
           </form>
-          {emailError ? <p className="text-sm text-red-200">{emailError}</p> : null}
-          {emailMessage ? <p className="text-sm text-emerald-200">{emailMessage}</p> : null}
+          {emailError ? <p className="text-sm font-bold text-[#8d281f]">{emailError}</p> : null}
+          {emailMessage ? <p className="text-sm font-bold text-[#3f5821]">{emailMessage}</p> : null}
         </section>
 
         <section className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
-            <Trash2 className="h-4 w-4 text-red-200" />
+          <div className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.1em] text-[#25251e]">
+            <Trash2 className="h-4 w-4 text-[#8d281f]" />
             Delete account
           </div>
           <form
@@ -261,27 +261,27 @@ export function AccountSettings({
               type="password"
               value={deletePassword}
               onChange={(event) => setDeletePassword(event.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="Current password"
             />
             <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
               <input
                 value={deleteConfirmation}
                 onChange={(event) => setDeleteConfirmation(event.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-slate-950/80 px-3 py-2 text-sm text-slate-100 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Type DELETE"
               />
               <Button
                 type="submit"
                 disabled={deleteMutation.isPending}
-                className="bg-red-500 text-white hover:bg-red-400"
+                className="bg-[#8d281f] text-[#fffdf8] hover:bg-[#732019]"
               >
                 Delete account
               </Button>
             </div>
           </form>
-          {deleteError ? <p className="text-sm text-red-200">{deleteError}</p> : null}
-          {deleteMessage ? <p className="text-sm text-emerald-200">{deleteMessage}</p> : null}
+          {deleteError ? <p className="text-sm font-bold text-[#8d281f]">{deleteError}</p> : null}
+          {deleteMessage ? <p className="text-sm font-bold text-[#3f5821]">{deleteMessage}</p> : null}
         </section>
       </CardContent>
     </Card>

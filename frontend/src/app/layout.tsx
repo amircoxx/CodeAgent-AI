@@ -7,7 +7,7 @@ import { Providers } from "./providers";
 export const metadata: Metadata = {
   title: "CodeGuard AI",
   description:
-    "AI-powered code review for bugs, security risks, performance issues, and maintainability improvements.",
+    "Security-focused code review cockpit for snippets and GitHub pull requests.",
 };
 
 export default function RootLayout({

@@ -24,5 +24,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Local Codex/Superpowers companion state
+.superpowers/
+
 # OS files
 .DS_Store

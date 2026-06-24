@@ -69,9 +69,9 @@ export function ReviewHistory({
   onSelectReview,
 }: ReviewHistoryProps) {
   return (
-    <Card className="border-white/10 bg-slate-950/76 backdrop-blur">
+    <Card>
       <CardHeader>
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md border border-cyan-300/25 bg-cyan-300/10 text-cyan-200">
+        <div className="ledger-icon mb-3 flex h-10 w-10 items-center justify-center rounded">
           <FileSearch className="h-5 w-5" />
         </div>
         <CardTitle>Review history</CardTitle>
@@ -81,21 +81,21 @@ export function ReviewHistory({
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex items-center gap-3 rounded-md border border-white/10 bg-slate-900/68 p-4 text-sm text-slate-300">
-            <Clock3 className="h-4 w-4 animate-pulse text-cyan-200" />
+          <div className="flex items-center gap-3 rounded border border-[#bdb5a1] bg-[#fffdf8] p-4 text-sm font-medium text-[#4f4b41]">
+            <Clock3 className="h-4 w-4 animate-pulse text-[#315f72]" />
             Loading saved reviews
           </div>
         ) : null}
 
         {error ? (
-          <div className="flex gap-3 rounded-md border border-red-400/20 bg-red-950/20 p-4 text-sm text-red-100">
+          <div className="flex gap-3 rounded border border-[#bf3b2d] bg-[#f1d7d1] p-4 text-sm font-medium text-[#8d281f]">
             <AlertCircle className="mt-0.5 h-4 w-4 flex-none" />
             {error.message}
           </div>
         ) : null}
 
         {!isLoading && !error && data?.length === 0 ? (
-          <div className="rounded-md border border-white/10 bg-slate-900/68 p-4 text-sm text-slate-300">
+          <div className="rounded border border-[#bdb5a1] bg-[#fffdf8] p-4 text-sm text-[#4f4b41]">
             No saved reviews yet. Submit a review to create the first saved result.
           </div>
         ) : null}
@@ -113,10 +113,10 @@ export function ReviewHistory({
                 type="button"
                 onClick={() => onSelectReview(review.id)}
                 className={[
-                  "w-full rounded-md border p-4 text-left transition-colors",
+                  "w-full rounded border p-4 text-left transition-colors",
                   isSelected
-                    ? "border-emerald-300/45 bg-emerald-300/10"
-                    : "border-white/10 bg-slate-900/68 hover:border-cyan-300/35 hover:bg-slate-900",
+                    ? "border-[#bf3b2d] bg-[#f1d7d1] shadow-[4px_4px_0_rgba(191,59,45,0.16)]"
+                    : "border-[#bdb5a1] bg-[#fffdf8] hover:border-[#315f72] hover:bg-[#eef3f1]",
                 ].join(" ")}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -129,17 +129,17 @@ export function ReviewHistory({
                         <Badge variant="outline">PR: {prLabel}</Badge>
                       ) : null}
                     </div>
-                    <h3 className="font-semibold text-slate-100">{review.title}</h3>
-                    <p className="mt-1 text-sm text-slate-400">
+                    <h3 className="font-display text-lg font-semibold text-[#171711]">{review.title}</h3>
+                    <p className="mt-1 text-sm text-[#6a6659]">
                       {review.language}
                     </p>
                     {review.source === "GITHUB_PR" && review.githubPullRequestTitle ? (
-                      <p className="mt-1 text-sm text-slate-300">
+                      <p className="mt-1 text-sm text-[#4f4b41]">
                         Title: {review.githubPullRequestTitle}
                       </p>
                     ) : null}
                     {review.projectName ? (
-                      <p className="mt-1 text-sm text-cyan-200">
+                      <p className="mt-1 text-sm font-bold text-[#315f72]">
                         Project: {review.projectName}
                       </p>
                     ) : null}
@@ -148,7 +148,7 @@ export function ReviewHistory({
                     {risk.label}: {review.riskScore}
                   </Badge>
                 </div>
-                <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-300">
+                <p className="mt-3 line-clamp-2 text-sm leading-6 text-[#4f4b41]">
                   {review.summary}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">

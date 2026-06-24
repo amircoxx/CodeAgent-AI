@@ -174,76 +174,83 @@ export default function Home() {
   }, [isAccountSettingsOpen]);
 
   return (
-    <main className="code-grid min-h-screen px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8">
-        <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <div className="mb-4 inline-flex items-center rounded-md border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold uppercase text-cyan-100">
-              Full-stack starter
+    <main className="code-grid min-h-screen px-4 py-6 sm:px-6 lg:px-8">
+      <div className="relative mx-auto flex max-w-7xl flex-col gap-7">
+        <header className="ledger-panel overflow-hidden rounded-md">
+          <div className="flex flex-col gap-5 border-b border-[#25251e] bg-[#fffdf8]/72 px-5 py-5 lg:flex-row lg:items-end lg:justify-between sm:px-7">
+            <div className="max-w-3xl">
+              <div className="mb-4 inline-flex items-center rounded border border-[#25251e] bg-[#171711] px-3 py-1 text-xs font-extrabold uppercase tracking-[0.18em] text-[#fffdf8]">
+                Security review cockpit
+              </div>
+              <h1 className="font-display text-5xl font-semibold tracking-normal text-[#171711] sm:text-7xl">
+                CodeGuard AI
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-[#4f4b41] sm:text-lg">
+                Inspect code snippets and GitHub pull requests for bugs,
+                security risks, performance issues, and maintainability gaps.
+              </p>
             </div>
-            <h1 className="text-4xl font-bold tracking-normal text-white sm:text-6xl">
-              CodeGuard AI
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-              AI-powered code review for bugs, security risks, performance issues,
-              and maintainability improvements.
-            </p>
-          </div>
 
-          {token && meQuery.data ? (
-            <div className="relative">
-              <button
-                className="flex w-full min-w-64 items-center justify-between gap-4 rounded-md border border-white/10 bg-slate-950/70 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-cyan-300/25 hover:bg-slate-900/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 lg:w-auto"
-                type="button"
-                aria-expanded={isAccountMenuOpen}
-                aria-haspopup="menu"
-                onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
-              >
-                <span className="min-w-0">
-                  <span className="block truncate font-semibold text-white">{meQuery.data.name}</span>
-                  <span className="block truncate text-slate-400">{meQuery.data.email}</span>
-                </span>
-                <ChevronDown
-                  className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${
-                    isAccountMenuOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {isAccountMenuOpen ? (
-                <div
-                  className="absolute right-0 z-20 mt-2 w-full min-w-64 rounded-md border border-white/10 bg-slate-950 p-1 text-sm shadow-2xl shadow-black/40 lg:w-64"
-                  role="menu"
+            {token && meQuery.data ? (
+              <div className="relative">
+                <button
+                  className="flex w-full min-w-64 items-center justify-between gap-4 rounded border border-[#25251e] bg-[#f5f1e6] px-4 py-3 text-left text-sm text-[#25251e] transition-colors hover:bg-[#eee7d8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bf3b2d] lg:w-auto"
+                  type="button"
+                  aria-expanded={isAccountMenuOpen}
+                  aria-haspopup="menu"
+                  onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
                 >
-                  <button
-                    className="flex w-full items-center gap-2 rounded px-3 py-2 text-left font-medium text-slate-200 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setIsAccountMenuOpen(false);
-                      setIsAccountSettingsOpen(true);
-                    }}
+                  <span className="min-w-0">
+                    <span className="block truncate font-extrabold text-[#171711]">{meQuery.data.name}</span>
+                    <span className="block truncate text-[#6a6659]">{meQuery.data.email}</span>
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 text-[#6a6659] transition-transform ${
+                      isAccountMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isAccountMenuOpen ? (
+                  <div
+                    className="absolute right-0 z-20 mt-2 w-full min-w-64 rounded border border-[#25251e] bg-[#fffdf8] p-1 text-sm shadow-[8px_8px_0_rgba(23,23,17,0.14)] lg:w-64"
+                    role="menu"
                   >
-                    <Settings className="h-4 w-4 text-cyan-200" />
-                    Settings
-                  </button>
-                  <button
-                    className="flex w-full items-center gap-2 rounded px-3 py-2 text-left font-medium text-emerald-200 hover:bg-slate-900 hover:text-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
-                    type="button"
-                    role="menuitem"
-                    onClick={() => handleLogout()}
-                  >
-                    Sign out
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+                    <button
+                      className="flex w-full items-center gap-2 rounded px-3 py-2 text-left font-bold text-[#25251e] hover:bg-[#eee7d8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bf3b2d]"
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        setIsAccountSettingsOpen(true);
+                      }}
+                    >
+                      <Settings className="h-4 w-4 text-[#315f72]" />
+                      Settings
+                    </button>
+                    <button
+                      className="flex w-full items-center gap-2 rounded px-3 py-2 text-left font-bold text-[#8d281f] hover:bg-[#f1d7d1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bf3b2d]"
+                      type="button"
+                      role="menuitem"
+                      onClick={() => handleLogout()}
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          <div className="grid gap-px bg-[#25251e] text-xs font-extrabold uppercase tracking-[0.14em] text-[#4f4b41] sm:grid-cols-3">
+            <div className="bg-[#eee7d8] px-5 py-3 sm:px-7">Manual code audit</div>
+            <div className="bg-[#eee7d8] px-5 py-3 sm:px-7">GitHub PR inspection</div>
+            <div className="bg-[#eee7d8] px-5 py-3 sm:px-7">Saved risk ledger</div>
+          </div>
         </header>
 
         {token && isAccountSettingsOpen ? (
           <div
-            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/82 px-4 py-6 backdrop-blur-sm sm:py-10"
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#171711]/70 px-4 py-6 backdrop-blur-sm sm:py-10"
             role="dialog"
             aria-modal="true"
             aria-labelledby="account-settings-title"
@@ -256,7 +263,7 @@ export default function Home() {
             <div className="w-full max-w-2xl">
               <div className="mb-3 flex justify-end">
                 <button
-                  className="flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-slate-950/90 text-slate-200 transition-colors hover:border-cyan-300/25 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
+                  className="flex h-10 w-10 items-center justify-center rounded border border-[#25251e] bg-[#fffdf8] text-[#25251e] transition-colors hover:bg-[#f1d7d1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bf3b2d]"
                   type="button"
                   aria-label="Close settings"
                   onClick={() => setIsAccountSettingsOpen(false)}
@@ -275,7 +282,7 @@ export default function Home() {
         ) : null}
 
         {token && meQuery.isLoading ? (
-          <section className="rounded-md border border-white/10 bg-slate-950/76 p-6 text-sm text-slate-300">
+          <section className="ledger-panel rounded-md p-6 text-sm font-medium text-[#4f4b41]">
             Loading your workspace...
           </section>
         ) : !token ? (
