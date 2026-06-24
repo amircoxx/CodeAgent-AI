@@ -176,7 +176,7 @@ export default function Home() {
   return (
     <main className="code-grid min-h-screen px-4 py-6 sm:px-6 lg:px-8">
       <div className="relative mx-auto flex max-w-7xl flex-col gap-7">
-        <header className="ledger-panel overflow-hidden rounded-md">
+        <header className="ledger-panel rounded-md">
           <div className="flex flex-col gap-5 border-b border-[#25251e] bg-[#fffdf8]/72 px-5 py-5 lg:flex-row lg:items-end lg:justify-between sm:px-7">
             <div className="max-w-3xl">
               <div className="mb-4 inline-flex items-center rounded border border-[#25251e] bg-[#171711] px-3 py-1 text-xs font-extrabold uppercase tracking-[0.18em] text-[#fffdf8]">
