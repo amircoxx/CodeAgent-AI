@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronDown, Settings, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AccountSettings } from "@/components/account-settings";
@@ -40,6 +41,8 @@ export default function Home() {
   const [selectedReviewId, setSelectedReviewId] = useState<number>();
   const [submittedReview, setSubmittedReview] = useState<ReviewResponse>();
   const [sessionMessage, setSessionMessage] = useState<string>();
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
 
   useEffect(() => {
     const savedToken = window.localStorage.getItem(tokenStorageKey);
@@ -61,6 +64,8 @@ export default function Home() {
     setToken(undefined);
     setSelectedReviewId(undefined);
     setSubmittedReview(undefined);
+    setIsAccountMenuOpen(false);
+    setIsAccountSettingsOpen(false);
     queryClient.clear();
   };
 
@@ -153,6 +158,21 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meQuery.error]);
 
+  useEffect(() => {
+    if (!isAccountSettingsOpen) {
+      return;
+    }
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsAccountSettingsOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [isAccountSettingsOpen]);
+
   return (
     <main className="code-grid min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-8">
@@ -171,19 +191,88 @@ export default function Home() {
           </div>
 
           {token && meQuery.data ? (
-            <div className="rounded-md border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
-              <div className="font-semibold text-white">{meQuery.data.name}</div>
-              <div className="text-slate-400">{meQuery.data.email}</div>
+            <div className="relative">
               <button
-                className="mt-2 text-sm font-medium text-emerald-200 hover:text-emerald-100"
+                className="flex w-full min-w-64 items-center justify-between gap-4 rounded-md border border-white/10 bg-slate-950/70 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-cyan-300/25 hover:bg-slate-900/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 lg:w-auto"
                 type="button"
-                onClick={() => handleLogout()}
+                aria-expanded={isAccountMenuOpen}
+                aria-haspopup="menu"
+                onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
               >
-                Sign out
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold text-white">{meQuery.data.name}</span>
+                  <span className="block truncate text-slate-400">{meQuery.data.email}</span>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${
+                    isAccountMenuOpen ? "rotate-180" : ""
+                  }`}
+                />
               </button>
+
+              {isAccountMenuOpen ? (
+                <div
+                  className="absolute right-0 z-20 mt-2 w-full min-w-64 rounded-md border border-white/10 bg-slate-950 p-1 text-sm shadow-2xl shadow-black/40 lg:w-64"
+                  role="menu"
+                >
+                  <button
+                    className="flex w-full items-center gap-2 rounded px-3 py-2 text-left font-medium text-slate-200 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsAccountMenuOpen(false);
+                      setIsAccountSettingsOpen(true);
+                    }}
+                  >
+                    <Settings className="h-4 w-4 text-cyan-200" />
+                    Settings
+                  </button>
+                  <button
+                    className="flex w-full items-center gap-2 rounded px-3 py-2 text-left font-medium text-emerald-200 hover:bg-slate-900 hover:text-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleLogout()}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </header>
+
+        {token && isAccountSettingsOpen ? (
+          <div
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/82 px-4 py-6 backdrop-blur-sm sm:py-10"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="account-settings-title"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                setIsAccountSettingsOpen(false);
+              }
+            }}
+          >
+            <div className="w-full max-w-2xl">
+              <div className="mb-3 flex justify-end">
+                <button
+                  className="flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-slate-950/90 text-slate-200 transition-colors hover:border-cyan-300/25 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
+                  type="button"
+                  aria-label="Close settings"
+                  onClick={() => setIsAccountSettingsOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <AccountSettings
+                token={token}
+                currentEmail={meQuery.data?.email ?? ""}
+                onAuthRefresh={handleAuthSuccess}
+                onLogout={handleLogout}
+              />
+            </div>
+          </div>
+        ) : null}
 
         {token && meQuery.isLoading ? (
           <section className="rounded-md border border-white/10 bg-slate-950/76 p-6 text-sm text-slate-300">
@@ -204,12 +293,6 @@ export default function Home() {
                   isPending={projectMutation.isPending}
                   error={projectMutation.error}
                   onSubmit={(payload) => projectMutation.mutate(payload)}
-                />
-                <AccountSettings
-                  token={token}
-                  currentEmail={meQuery.data?.email ?? ""}
-                  onAuthRefresh={handleAuthSuccess}
-                  onLogout={handleLogout}
                 />
                 <CodeReviewForm
                   isPending={reviewMutation.isPending}

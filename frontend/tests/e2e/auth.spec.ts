@@ -19,8 +19,16 @@ test("user can register, sign out, and sign in again", async ({ page }) => {
   await expect(page.getByText("E2E Auth User")).toBeVisible();
   await expect(page.getByText(email)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create a project" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Account security" })).toBeHidden();
 
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.getByRole("button", { name: new RegExp(`E2E Auth User\\s+${email}`) }).click();
+  await page.getByRole("menuitem", { name: "Settings" }).click();
+  await expect(page.getByRole("dialog", { name: "Account security" })).toBeVisible();
+  await page.getByRole("button", { name: "Close settings" }).click();
+  await expect(page.getByRole("dialog", { name: "Account security" })).toBeHidden();
+
+  await page.getByRole("button", { name: new RegExp(`E2E Auth User\\s+${email}`) }).click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 
   await page.getByLabel("Email").fill(email);

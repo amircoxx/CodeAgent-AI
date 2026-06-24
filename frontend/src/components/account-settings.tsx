@@ -115,7 +115,7 @@ export function AccountSettings({
         <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md border border-cyan-300/25 bg-cyan-300/10 text-cyan-100">
           <ShieldCheck className="h-5 w-5" />
         </div>
-        <CardTitle>Account security</CardTitle>
+        <CardTitle id="account-settings-title">Account security</CardTitle>
         <CardDescription>Manage sign-in credentials for this workspace.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
