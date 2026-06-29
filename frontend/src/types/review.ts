@@ -19,8 +19,38 @@ export type ReviewRequest = {
 
 export type GitHubPullRequestReviewRequest = {
   projectId?: number;
-  pullRequestUrl: string;
+  pullRequestUrl?: string;
+  owner?: string;
+  repo?: string;
+  pullRequestNumber?: number;
   postComment?: boolean;
+};
+
+export type GitHubConnectionResponse = {
+  connected: boolean;
+  installationId?: number | null;
+  accountLogin?: string | null;
+  accountType?: string | null;
+};
+
+export type GitHubConnectUrlResponse = {
+  connectUrl: string;
+  state: string;
+};
+
+export type GitHubRepositoryResponse = {
+  id: number;
+  owner: string;
+  name: string;
+  fullName: string;
+  privateRepository: boolean;
+};
+
+export type GitHubPullRequestSummary = {
+  number: number;
+  title: string;
+  author: string;
+  url: string;
 };
 
 export type ReviewIssue = {

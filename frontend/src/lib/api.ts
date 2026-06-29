@@ -2,7 +2,11 @@ import type {
   AuthResponse,
   CompletePasswordChangeRequest,
   DeleteAccountRequest,
+  GitHubConnectionResponse,
+  GitHubConnectUrlResponse,
   GitHubPullRequestReviewRequest,
+  GitHubPullRequestSummary,
+  GitHubRepositoryResponse,
   LoginRequest,
   MessageResponse,
   PasswordChangeRequestResponse,
@@ -261,6 +265,67 @@ export async function createGitHubPullRequestReview(
   }
 
   return response.json() as Promise<ReviewResponse>;
+}
+
+export async function getGitHubConnection(
+  token: string,
+): Promise<GitHubConnectionResponse> {
+  const response = await request("/api/github/connection", {
+    headers: authHeaders(token),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Could not load GitHub connection status.");
+  }
+
+  return response.json() as Promise<GitHubConnectionResponse>;
+}
+
+export async function getGitHubConnectUrl(
+  token: string,
+): Promise<GitHubConnectUrlResponse> {
+  const response = await request("/api/github/connect-url", {
+    headers: authHeaders(token),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Could not start GitHub connection.");
+  }
+
+  return response.json() as Promise<GitHubConnectUrlResponse>;
+}
+
+export async function getGitHubRepositories(
+  token: string,
+): Promise<GitHubRepositoryResponse[]> {
+  const response = await request("/api/github/repositories", {
+    headers: authHeaders(token),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response, "Could not load GitHub repositories.");
+  }
+
+  return response.json() as Promise<GitHubRepositoryResponse[]>;
+}
+
+export async function getGitHubPullRequests(
+  owner: string,
+  repo: string,
+  token: string,
+): Promise<GitHubPullRequestSummary[]> {
+  const response = await request(
+    `/api/github/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pull-requests`,
+    {
+      headers: authHeaders(token),
+    },
+  );
+
+  if (!response.ok) {
+    throw await parseError(response, "Could not load GitHub pull requests.");
+  }
+
+  return response.json() as Promise<GitHubPullRequestSummary[]>;
 }
 
 export async function getReviews(token: string): Promise<ReviewResponse[]> {

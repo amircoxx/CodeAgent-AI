@@ -15,6 +15,10 @@ import {
   createProject,
   createGitHubPullRequestReview,
   createReview,
+  getGitHubConnection,
+  getGitHubConnectUrl,
+  getGitHubPullRequests,
+  getGitHubRepositories,
   getMe,
   getReview,
   getReviews,
@@ -25,6 +29,8 @@ import {
 import type {
   AuthResponse,
   GitHubPullRequestReviewRequest,
+  GitHubPullRequestSummary,
+  GitHubRepositoryResponse,
   LoginRequest,
   ProjectRequest,
   ProjectResponse,
@@ -43,6 +49,7 @@ export default function Home() {
   const [sessionMessage, setSessionMessage] = useState<string>();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+  const [selectedGitHubRepository, setSelectedGitHubRepository] = useState<string>();
 
   useEffect(() => {
     const savedToken = window.localStorage.getItem(tokenStorageKey);
@@ -64,6 +71,7 @@ export default function Home() {
     setToken(undefined);
     setSelectedReviewId(undefined);
     setSubmittedReview(undefined);
+    setSelectedGitHubRepository(undefined);
     setIsAccountMenuOpen(false);
     setIsAccountSettingsOpen(false);
     queryClient.clear();
@@ -86,6 +94,36 @@ export default function Home() {
     queryKey: ["projects", token],
     queryFn: () => getProjects(token as string),
     enabled: token !== undefined,
+  });
+
+  const githubConnectionQuery = useQuery({
+    queryKey: ["github-connection", token],
+    queryFn: () => getGitHubConnection(token as string),
+    enabled: token !== undefined,
+  });
+
+  const githubRepositoriesQuery = useQuery<GitHubRepositoryResponse[], Error>({
+    queryKey: ["github-repositories", token],
+    queryFn: () => getGitHubRepositories(token as string),
+    enabled: token !== undefined && githubConnectionQuery.data?.connected === true,
+  });
+
+  const selectedRepository = githubRepositoriesQuery.data?.find(
+    (repository) => repository.fullName === selectedGitHubRepository,
+  );
+
+  const githubPullRequestsQuery = useQuery<GitHubPullRequestSummary[], Error>({
+    queryKey: ["github-pull-requests", token, selectedGitHubRepository],
+    queryFn: () =>
+      getGitHubPullRequests(
+        selectedRepository?.owner ?? "",
+        selectedRepository?.name ?? "",
+        token as string,
+      ),
+    enabled:
+      token !== undefined &&
+      githubConnectionQuery.data?.connected === true &&
+      selectedRepository !== undefined,
   });
 
   const selectedReviewQuery = useQuery<ReviewResponse, Error>({
@@ -117,6 +155,13 @@ export default function Home() {
       setSelectedReviewId(undefined);
       queryClient.invalidateQueries({ queryKey: ["reviews", token] });
       queryClient.setQueryData(["reviews", token, review.id], review);
+    },
+  });
+
+  const githubConnectMutation = useMutation({
+    mutationFn: () => getGitHubConnectUrl(token as string),
+    onSuccess: (response) => {
+      window.location.assign(response.connectUrl);
     },
   });
 
@@ -310,9 +355,22 @@ export default function Home() {
                 />
                 <GitHubPrReviewForm
                   isPending={githubReviewMutation.isPending}
+                  connection={githubConnectionQuery.data}
+                  isConnectionLoading={githubConnectionQuery.isLoading}
+                  connectionError={githubConnectionQuery.error}
+                  repositories={githubRepositoriesQuery.data}
+                  areRepositoriesLoading={githubRepositoriesQuery.isLoading}
+                  repositoriesError={githubRepositoriesQuery.error}
+                  pullRequests={githubPullRequestsQuery.data}
+                  arePullRequestsLoading={githubPullRequestsQuery.isLoading}
+                  pullRequestsError={githubPullRequestsQuery.error}
                   projects={projectsQuery.data}
                   areProjectsLoading={projectsQuery.isLoading}
                   projectsError={projectsQuery.error}
+                  selectedRepositoryFullName={selectedGitHubRepository}
+                  isConnectPending={githubConnectMutation.isPending}
+                  onConnect={() => githubConnectMutation.mutate()}
+                  onRepositoryChange={setSelectedGitHubRepository}
                   onSubmit={(payload) => githubReviewMutation.mutate(payload)}
                 />
               </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GitPullRequest, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -19,35 +19,72 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type {
+  GitHubConnectionResponse,
   GitHubPullRequestReviewRequest,
+  GitHubPullRequestSummary,
+  GitHubRepositoryResponse,
   ProjectResponse,
 } from "@/types/review";
 
 type GitHubPrReviewFormProps = {
   isPending: boolean;
+  connection?: GitHubConnectionResponse;
+  isConnectionLoading: boolean;
+  connectionError?: Error | null;
+  repositories?: GitHubRepositoryResponse[];
+  areRepositoriesLoading: boolean;
+  repositoriesError?: Error | null;
+  pullRequests?: GitHubPullRequestSummary[];
+  arePullRequestsLoading: boolean;
+  pullRequestsError?: Error | null;
   projects?: ProjectResponse[];
   areProjectsLoading: boolean;
   projectsError?: Error | null;
+  selectedRepositoryFullName?: string;
+  isConnectPending: boolean;
+  onConnect: () => void;
+  onRepositoryChange: (repositoryFullName?: string) => void;
   onSubmit: (payload: GitHubPullRequestReviewRequest) => void;
 };
 
 const noProjectValue = "__no_project__";
-const pullRequestUrlPattern =
-  /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+$/i;
+const noRepositoryValue = "__no_repository__";
+const noPullRequestValue = "__no_pull_request__";
 
 export function GitHubPrReviewForm({
   isPending,
+  connection,
+  isConnectionLoading,
+  connectionError,
+  repositories,
+  areRepositoriesLoading,
+  repositoriesError,
+  pullRequests,
+  arePullRequestsLoading,
+  pullRequestsError,
   projects,
   areProjectsLoading,
   projectsError,
+  selectedRepositoryFullName,
+  isConnectPending,
+  onConnect,
+  onRepositoryChange,
   onSubmit,
 }: GitHubPrReviewFormProps) {
   const [projectId, setProjectId] = useState(noProjectValue);
-  const [pullRequestUrl, setPullRequestUrl] = useState(
-    "https://github.com/owner/repo/pull/123",
-  );
-  const [postComment, setPostComment] = useState(false);
+  const [pullRequestNumber, setPullRequestNumber] = useState(noPullRequestValue);
   const [localError, setLocalError] = useState<string>();
+
+  useEffect(() => {
+    setPullRequestNumber(noPullRequestValue);
+  }, [selectedRepositoryFullName]);
+
+  const selectedRepository = repositories?.find(
+    (repository) => repository.fullName === selectedRepositoryFullName,
+  );
+  const selectedPullRequest = pullRequests?.find(
+    (pullRequest) => String(pullRequest.number) === pullRequestNumber,
+  );
 
   return (
     <Card>
@@ -57,102 +94,177 @@ export function GitHubPrReviewForm({
         </div>
         <CardTitle>Review a GitHub pull request</CardTitle>
         <CardDescription>
-          Fetch public PR changes and run the same structured review pipeline.
+          Connect GitHub, choose an allowed repository, and grade an open PR.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form
-          className="space-y-5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setLocalError(undefined);
-
-            const trimmedUrl = pullRequestUrl.trim();
-            if (!pullRequestUrlPattern.test(trimmedUrl)) {
-              setLocalError("Use a GitHub PR URL like https://github.com/owner/repo/pull/123.");
-              return;
-            }
-
-            onSubmit({
-              ...(projectId === noProjectValue ? {} : { projectId: Number(projectId) }),
-              pullRequestUrl: trimmedUrl,
-              postComment,
-            });
-          }}
-        >
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-[#25251e]" htmlFor="pull-request-url">
-              Pull request URL
-            </label>
-            <input
-              id="pull-request-url"
-              value={pullRequestUrl}
-              onChange={(event) => setPullRequestUrl(event.target.value)}
-              className="audit-input flex h-10 w-full rounded border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="https://github.com/owner/repo/pull/123"
-            />
+        {isConnectionLoading ? (
+          <p className="text-sm font-medium text-[#4f4b41]">Checking GitHub connection...</p>
+        ) : connectionError ? (
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-[#8d281f]">{connectionError.message}</p>
+            <Button type="button" onClick={onConnect} disabled={isConnectPending}>
+              {isConnectPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Connect GitHub
+            </Button>
           </div>
+        ) : !connection?.connected ? (
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-[#4f4b41]">
+              Install the CodeGuard GitHub App on selected repositories before
+              loading pull requests.
+            </p>
+            <Button type="button" onClick={onConnect} disabled={isConnectPending}>
+              {isConnectPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Opening GitHub
+                </>
+              ) : (
+                "Connect GitHub"
+              )}
+            </Button>
+          </div>
+        ) : (
+          <form
+            className="space-y-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setLocalError(undefined);
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-[#25251e]" htmlFor="github-project">
-              Project
-            </label>
-            <Select value={projectId} onValueChange={setProjectId}>
-              <SelectTrigger id="github-project">
-                <SelectValue placeholder="Select project" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={noProjectValue}>No project</SelectItem>
-                {projects?.map((project) => (
-                  <SelectItem key={project.id} value={String(project.id)}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {areProjectsLoading ? (
-              <p className="text-xs text-[#6a6659]">Loading projects...</p>
-            ) : projectsError ? (
-              <p className="text-xs font-bold text-[#8d281f]">{projectsError.message}</p>
-            ) : projects?.length === 0 ? (
-              <p className="text-xs text-[#6a6659]">
-                No projects yet. PR reviews can still be submitted without one.
-              </p>
+              if (!selectedRepository) {
+                setLocalError("Select a GitHub repository first.");
+                return;
+              }
+              if (!selectedPullRequest) {
+                setLocalError("Select an open pull request first.");
+                return;
+              }
+
+              onSubmit({
+                ...(projectId === noProjectValue ? {} : { projectId: Number(projectId) }),
+                owner: selectedRepository.owner,
+                repo: selectedRepository.name,
+                pullRequestNumber: selectedPullRequest.number,
+              });
+            }}
+          >
+            <div className="rounded border border-[#bdb5a1] bg-[#f2eee2] p-3 text-xs leading-5 text-[#4f4b41]">
+              Connected to{" "}
+              <span className="font-extrabold text-[#171711]">
+                {connection.accountLogin}
+              </span>
+              {connection.accountType ? ` (${connection.accountType})` : null}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-[#25251e]" htmlFor="github-repository">
+                Repository
+              </label>
+              <Select
+                value={selectedRepositoryFullName ?? noRepositoryValue}
+                onValueChange={(value) => {
+                  onRepositoryChange(value === noRepositoryValue ? undefined : value);
+                }}
+              >
+                <SelectTrigger id="github-repository">
+                  <SelectValue placeholder="Select repository" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={noRepositoryValue}>Select repository</SelectItem>
+                  {repositories?.map((repository) => (
+                    <SelectItem key={repository.id} value={repository.fullName}>
+                      {repository.fullName}
+                      {repository.privateRepository ? " (private)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {areRepositoriesLoading ? (
+                <p className="text-xs text-[#6a6659]">Loading repositories...</p>
+              ) : repositoriesError ? (
+                <p className="text-xs font-bold text-[#8d281f]">{repositoriesError.message}</p>
+              ) : repositories?.length === 0 ? (
+                <p className="text-xs text-[#6a6659]">
+                  No repositories found. Update the GitHub App installation to allow repository access.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-[#25251e]" htmlFor="github-pull-request">
+                Pull request
+              </label>
+              <Select
+                value={pullRequestNumber}
+                onValueChange={setPullRequestNumber}
+                disabled={!selectedRepository}
+              >
+                <SelectTrigger id="github-pull-request">
+                  <SelectValue placeholder="Select pull request" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={noPullRequestValue}>Select pull request</SelectItem>
+                  {pullRequests?.map((pullRequest) => (
+                    <SelectItem key={pullRequest.number} value={String(pullRequest.number)}>
+                      #{pullRequest.number} {pullRequest.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {arePullRequestsLoading ? (
+                <p className="text-xs text-[#6a6659]">Loading pull requests...</p>
+              ) : pullRequestsError ? (
+                <p className="text-xs font-bold text-[#8d281f]">{pullRequestsError.message}</p>
+              ) : selectedRepository && pullRequests?.length === 0 ? (
+                <p className="text-xs text-[#6a6659]">No open pull requests for this repository.</p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-[#25251e]" htmlFor="github-project">
+                Project
+              </label>
+              <Select value={projectId} onValueChange={setProjectId}>
+                <SelectTrigger id="github-project">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={noProjectValue}>No project</SelectItem>
+                  {projects?.map((project) => (
+                    <SelectItem key={project.id} value={String(project.id)}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {areProjectsLoading ? (
+                <p className="text-xs text-[#6a6659]">Loading projects...</p>
+              ) : projectsError ? (
+                <p className="text-xs font-bold text-[#8d281f]">{projectsError.message}</p>
+              ) : projects?.length === 0 ? (
+                <p className="text-xs text-[#6a6659]">
+                  No projects yet. PR reviews can still be submitted without one.
+                </p>
+              ) : null}
+            </div>
+
+            {localError ? (
+              <p className="text-sm font-bold text-[#8d281f]">{localError}</p>
             ) : null}
-          </div>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded border border-[#bdb5a1] bg-[#f2eee2] p-3 text-sm text-[#25251e]">
-            <input
-              checked={postComment}
-              onChange={(event) => setPostComment(event.target.checked)}
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded border-[#8c8574] bg-[#fffdf8] text-[#bf3b2d] focus:ring-[#bf3b2d]"
-            />
-            <span>
-              <span className="block font-bold text-[#171711]">
-                Post review summary comment to GitHub
-              </span>
-              <span className="mt-1 block text-xs leading-5 text-[#6a6659]">
-                Requires backend GitHub comment configuration. The token never leaves the server.
-              </span>
-            </span>
-          </label>
-
-          {localError ? (
-            <p className="text-sm font-bold text-[#8d281f]">{localError}</p>
-          ) : null}
-
-          <Button className="w-full" disabled={isPending} type="submit" size="lg">
-            {isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Reviewing PR
-              </>
-            ) : (
-              "Review Pull Request"
-            )}
-          </Button>
-        </form>
+            <Button className="w-full" disabled={isPending} type="submit" size="lg">
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Grading PR
+                </>
+              ) : (
+                "Grade Pull Request"
+              )}
+            </Button>
+          </form>
+        )}
       </CardContent>
     </Card>
   );
