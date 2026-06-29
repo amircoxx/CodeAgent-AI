@@ -42,7 +42,15 @@ public class HttpGitHubClient implements GitHubClient {
 
   @Override
   public GitHubPullRequestMetadata fetchPullRequest(GitHubPullRequestRef pullRequest) {
-    JsonNode root = sendGet(pullRequestPath(pullRequest));
+    return fetchPullRequest(null, pullRequest);
+  }
+
+  @Override
+  public GitHubPullRequestMetadata fetchPullRequest(
+      String installationToken,
+      GitHubPullRequestRef pullRequest
+  ) {
+    JsonNode root = sendGet(pullRequestPath(pullRequest), installationToken);
     String title = root.path("title").asText("");
     String author = root.path("user").path("login").asText("");
     return new GitHubPullRequestMetadata(title, author);
@@ -50,7 +58,15 @@ public class HttpGitHubClient implements GitHubClient {
 
   @Override
   public List<GitHubPullRequestFile> fetchPullRequestFiles(GitHubPullRequestRef pullRequest) {
-    JsonNode root = sendGet(pullRequestPath(pullRequest) + "/files");
+    return fetchPullRequestFiles(null, pullRequest);
+  }
+
+  @Override
+  public List<GitHubPullRequestFile> fetchPullRequestFiles(
+      String installationToken,
+      GitHubPullRequestRef pullRequest
+  ) {
+    JsonNode root = sendGet(pullRequestPath(pullRequest) + "/files", installationToken);
     if (!root.isArray()) {
       throw new GitHubFetchException("GitHub files response was not valid");
     }

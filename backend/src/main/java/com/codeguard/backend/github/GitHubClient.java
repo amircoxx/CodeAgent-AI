@@ -15,7 +15,17 @@ public interface GitHubClient {
 
   GitHubPullRequestMetadata fetchPullRequest(GitHubPullRequestRef pullRequest);
 
+  GitHubPullRequestMetadata fetchPullRequest(
+      String installationToken,
+      GitHubPullRequestRef pullRequest
+  );
+
   List<GitHubPullRequestFile> fetchPullRequestFiles(GitHubPullRequestRef pullRequest);
+
+  List<GitHubPullRequestFile> fetchPullRequestFiles(
+      String installationToken,
+      GitHubPullRequestRef pullRequest
+  );
 
   String createPullRequestComment(GitHubPullRequestRef pullRequest, String body);
 }

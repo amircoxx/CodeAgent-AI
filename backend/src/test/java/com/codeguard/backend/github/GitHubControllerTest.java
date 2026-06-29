@@ -248,6 +248,62 @@ class GitHubControllerTest {
   }
 
   @Test
+  void selectedPullRequestReviewUsesConnectedInstallationTokenAndSavesReview() throws Exception {
+    String token = register("amir@example.com");
+    connectUser("amir@example.com", 98765L);
+    when(gitHubAppTokenService.createInstallationAccessToken(98765L))
+        .thenReturn("installation-token");
+    stubGitHubPullRequest("installation-token");
+
+    mockMvc.perform(post("/api/github/pull-request-review")
+            .header("Authorization", "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(
+                new SelectedPullRequestReviewRequest(null, "owner", "repo", 123, true)
+            )))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.source").value("GITHUB_PR"))
+        .andExpect(jsonPath("$.title").value("GitHub PR Review: owner/repo#123"))
+        .andExpect(jsonPath("$.githubOwner").value("owner"))
+        .andExpect(jsonPath("$.githubRepo").value("repo"))
+        .andExpect(jsonPath("$.githubPullRequestNumber").value(123))
+        .andExpect(jsonPath("$.githubPullRequestUrl").value("https://github.com/owner/repo/pull/123"))
+        .andExpect(jsonPath("$.githubPullRequestTitle").value("Add validation"))
+        .andExpect(jsonPath("$.githubCommentPosted").value(false))
+        .andExpect(jsonPath("$.githubCommentUrl").doesNotExist())
+        .andExpect(jsonPath("$.githubCommentError").doesNotExist());
+
+    CodeReviewEntity savedReview = codeReviewRepository.findAll().getFirst();
+    assertThat(savedReview.getSource()).isEqualTo(ReviewSource.GITHUB_PR);
+    assertThat(savedReview.getGithubOwner()).isEqualTo("owner");
+    assertThat(savedReview.getGithubRepo()).isEqualTo("repo");
+    assertThat(savedReview.getGithubPullRequestNumber()).isEqualTo(123);
+    verify(gitHubClient).fetchPullRequest(
+        eq("installation-token"),
+        argThat(pr -> "owner".equals(pr.owner()) && "repo".equals(pr.repo()) && pr.number() == 123)
+    );
+    verify(gitHubClient).fetchPullRequestFiles(
+        eq("installation-token"),
+        argThat(pr -> "owner".equals(pr.owner()) && "repo".equals(pr.repo()) && pr.number() == 123)
+    );
+    verify(gitHubClient, never()).createPullRequestComment(argThat(pr -> true), anyString());
+  }
+
+  @Test
+  void selectedPullRequestReviewRequiresGitHubConnection() throws Exception {
+    String token = register("amir@example.com");
+
+    mockMvc.perform(post("/api/github/pull-request-review")
+            .header("Authorization", "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(
+                new SelectedPullRequestReviewRequest(null, "owner", "repo", 123, false)
+            )))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.message").value("Connect GitHub before reviewing pull requests."));
+  }
+
+  @Test
   void reviewPullRequestFetchesDiffAnalyzesAndSavesReview() throws Exception {
     String token = register("amir@example.com");
     long projectId = createProject(token, "CodeGuard Backend", "Spring Boot backend");
@@ -410,6 +466,23 @@ class GitHubControllerTest {
     ));
   }
 
+  private void stubGitHubPullRequest(String installationToken) {
+    when(gitHubClient.fetchPullRequest(eq(installationToken), argThat(pr ->
+        "owner".equals(pr.owner()) && "repo".equals(pr.repo()) && pr.number() == 123
+    ))).thenReturn(new GitHubPullRequestMetadata("Add validation", "octocat"));
+    when(gitHubClient.fetchPullRequestFiles(eq(installationToken), argThat(pr ->
+        "owner".equals(pr.owner()) && "repo".equals(pr.repo()) && pr.number() == 123
+    ))).thenReturn(List.of(
+        new GitHubPullRequestFile(
+            "src/main/java/Example.java",
+            "modified",
+            "@@ -1,3 +1,6 @@\n public class Example {\n+  void validate() {}\n }"
+        ),
+        new GitHubPullRequestFile("package-lock.json", "modified", "@@ lockfile noise @@"),
+        new GitHubPullRequestFile("assets/logo.png", "modified", null)
+    ));
+  }
+
   private long createProject(String token, String name, String description) throws Exception {
     MvcResult result = mockMvc.perform(post("/api/projects")
             .header("Authorization", "Bearer " + token)
@@ -443,6 +516,15 @@ class GitHubControllerTest {
     private PullRequestReviewRequest(Long projectId, String pullRequestUrl) {
       this(projectId, pullRequestUrl, null);
     }
+  }
+
+  private record SelectedPullRequestReviewRequest(
+      Long projectId,
+      String owner,
+      String repo,
+      Integer pullRequestNumber,
+      Boolean postComment
+  ) {
   }
 
   private record ProjectRequest(String name, String description) {
