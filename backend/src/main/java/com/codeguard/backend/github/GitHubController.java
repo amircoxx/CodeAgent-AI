@@ -1,12 +1,15 @@
 package com.codeguard.backend.github;
 
 import com.codeguard.backend.github.dto.GitHubConnectionResponse;
+import com.codeguard.backend.github.dto.GitHubConnectUrlResponse;
 import com.codeguard.backend.review.dto.ReviewResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -27,6 +30,22 @@ public class GitHubController {
   @GetMapping("/connection")
   public GitHubConnectionResponse getConnection() {
     return gitHubConnectionService.getConnection();
+  }
+
+  @GetMapping("/connect-url")
+  public GitHubConnectUrlResponse getConnectUrl() {
+    return gitHubConnectionService.createConnectUrl();
+  }
+
+  @GetMapping("/setup")
+  public ResponseEntity<Void> completeSetup(
+      @RequestParam("installation_id") Long installationId,
+      @RequestParam String state
+  ) {
+    return ResponseEntity
+        .status(302)
+        .header("Location", gitHubConnectionService.completeSetup(installationId, state))
+        .build();
   }
 
   @PostMapping("/pull-request-review")

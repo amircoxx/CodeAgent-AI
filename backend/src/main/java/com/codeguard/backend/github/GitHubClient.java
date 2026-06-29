@@ -4,6 +4,8 @@ import java.util.List;
 
 public interface GitHubClient {
 
+  GitHubInstallationMetadata fetchInstallation(Long installationId);
+
   GitHubPullRequestMetadata fetchPullRequest(GitHubPullRequestRef pullRequest);
 
   List<GitHubPullRequestFile> fetchPullRequestFiles(GitHubPullRequestRef pullRequest);

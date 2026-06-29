@@ -30,6 +30,17 @@ public class HttpGitHubClient implements GitHubClient {
   }
 
   @Override
+  public GitHubInstallationMetadata fetchInstallation(Long installationId) {
+    JsonNode root = sendGet("/app/installations/" + installationId);
+    JsonNode account = root.path("account");
+    return new GitHubInstallationMetadata(
+        root.path("id").asLong(installationId),
+        account.path("login").asText(""),
+        account.path("type").asText("")
+    );
+  }
+
+  @Override
   public GitHubPullRequestMetadata fetchPullRequest(GitHubPullRequestRef pullRequest) {
     JsonNode root = sendGet(pullRequestPath(pullRequest));
     String title = root.path("title").asText("");

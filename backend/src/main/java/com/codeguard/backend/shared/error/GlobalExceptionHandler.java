@@ -1,5 +1,6 @@
 package com.codeguard.backend.shared.error;
 
+import com.codeguard.backend.github.GitHubSetupStateException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -38,6 +39,14 @@ public class GlobalExceptionHandler {
       HttpServletRequest request
   ) {
     return build(HttpStatus.NOT_FOUND, "Resource not found: " + request.getRequestURI(), request.getRequestURI());
+  }
+
+  @ExceptionHandler(GitHubSetupStateException.class)
+  public ResponseEntity<ApiErrorResponse> handleGitHubSetupState(
+      GitHubSetupStateException exception,
+      HttpServletRequest request
+  ) {
+    return build(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI());
   }
 
   @ExceptionHandler(RuntimeException.class)

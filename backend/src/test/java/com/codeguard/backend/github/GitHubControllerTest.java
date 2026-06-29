@@ -3,6 +3,7 @@ package com.codeguard.backend.github;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.codeguard.backend.project.repository.ProjectRepository;
 import com.codeguard.backend.github.entity.GitHubConnectionEntity;
+import com.codeguard.backend.github.repository.GitHubPendingConnectionRepository;
 import com.codeguard.backend.github.repository.GitHubConnectionRepository;
 import com.codeguard.backend.review.entity.CodeReviewEntity;
 import com.codeguard.backend.review.model.ReviewSource;
@@ -45,7 +47,10 @@ import org.springframework.test.web.servlet.MvcResult;
     "codeguard.github.max-files=20",
     "codeguard.github.max-patch-chars=30000",
     "codeguard.github.comments-enabled=true",
-    "codeguard.github.token=test-token"
+    "codeguard.github.token=test-token",
+    "codeguard.github.app-slug=codeguard-ai-test",
+    "codeguard.github.frontend-connected-redirect-url=http://localhost:3000/?github=connected",
+    "codeguard.github.pending-state-ttl-minutes=10"
 })
 class GitHubControllerTest {
 
@@ -65,6 +70,9 @@ class GitHubControllerTest {
   private GitHubConnectionRepository gitHubConnectionRepository;
 
   @Autowired
+  private GitHubPendingConnectionRepository gitHubPendingConnectionRepository;
+
+  @Autowired
   private UserRepository userRepository;
 
   @MockBean
@@ -74,6 +82,7 @@ class GitHubControllerTest {
   void setUp() {
     codeReviewRepository.deleteAll();
     projectRepository.deleteAll();
+    gitHubPendingConnectionRepository.deleteAll();
     gitHubConnectionRepository.deleteAll();
     userRepository.deleteAll();
   }
@@ -107,6 +116,71 @@ class GitHubControllerTest {
         .andExpect(jsonPath("$.installationId").value(98765))
         .andExpect(jsonPath("$.accountLogin").value("codeguard-labs"))
         .andExpect(jsonPath("$.accountType").value("Organization"));
+  }
+
+  @Test
+  void connectUrlCreatesPendingStateForCurrentUser() throws Exception {
+    String token = register("amir@example.com");
+    Long userId = userRepository.findActiveByEmail("amir@example.com").orElseThrow().getId();
+
+    mockMvc.perform(get("/api/github/connect-url")
+            .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.connectUrl")
+            .value(org.hamcrest.Matchers.startsWith("https://github.com/apps/codeguard-ai-test/installations/new")))
+        .andExpect(jsonPath("$.state").isString());
+
+    assertThat(gitHubPendingConnectionRepository.findAll())
+        .singleElement()
+        .satisfies(pending -> {
+          assertThat(pending.getUser().getId()).isEqualTo(userId);
+          assertThat(pending.getState()).isNotBlank();
+          assertThat(pending.isExpired(java.time.Instant.now())).isFalse();
+        });
+  }
+
+  @Test
+  void setupBindsInstallationToCurrentUserWhenStateIsValid() throws Exception {
+    String token = register("amir@example.com");
+    Long userId = userRepository.findActiveByEmail("amir@example.com").orElseThrow().getId();
+    String state = objectMapper.readTree(mockMvc.perform(get("/api/github/connect-url")
+            .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andReturn()
+        .getResponse()
+        .getContentAsString()).get("state").asText();
+    when(gitHubClient.fetchInstallation(eq(98765L)))
+        .thenReturn(new GitHubInstallationMetadata(98765L, "codeguard-labs", "Organization"));
+
+    mockMvc.perform(get("/api/github/setup")
+            .header("Authorization", "Bearer " + token)
+            .param("installation_id", "98765")
+            .param("state", state))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
+            .isEqualTo("http://localhost:3000/?github=connected"));
+
+    assertThat(gitHubConnectionRepository.findAll())
+        .singleElement()
+        .satisfies(connection -> {
+          assertThat(connection.getUser().getId()).isEqualTo(userId);
+          assertThat(connection.getInstallationId()).isEqualTo(98765L);
+          assertThat(connection.getAccountLogin()).isEqualTo("codeguard-labs");
+          assertThat(connection.getAccountType()).isEqualTo("Organization");
+        });
+    assertThat(gitHubPendingConnectionRepository.findAll()).isEmpty();
+  }
+
+  @Test
+  void setupReturnsBadRequestForInvalidState() throws Exception {
+    String token = register("amir@example.com");
+
+    mockMvc.perform(get("/api/github/setup")
+            .header("Authorization", "Bearer " + token)
+            .param("installation_id", "98765")
+            .param("state", "not-valid"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("GitHub connection state is invalid or expired."));
   }
 
   @Test
