@@ -48,6 +48,19 @@ public class GitHubController {
         .build();
   }
 
+  @GetMapping("/repositories")
+  public java.util.List<GitHubRepositoryMetadata> listRepositories() {
+    return gitHubConnectionService.listRepositories();
+  }
+
+  @GetMapping("/repositories/{owner}/{repo}/pull-requests")
+  public java.util.List<GitHubPullRequestSummary> listPullRequests(
+      @org.springframework.web.bind.annotation.PathVariable String owner,
+      @org.springframework.web.bind.annotation.PathVariable String repo
+  ) {
+    return gitHubConnectionService.listPullRequests(owner, repo);
+  }
+
   @PostMapping("/pull-request-review")
   public ReviewResponse reviewPullRequest(
       @Valid @RequestBody GitHubPullRequestReviewRequest request

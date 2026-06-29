@@ -67,6 +67,54 @@ public class HttpGitHubClient implements GitHubClient {
   }
 
   @Override
+  public List<GitHubRepositoryMetadata> listInstallationRepositories(String installationToken) {
+    JsonNode root = sendGet("/installation/repositories", installationToken);
+    JsonNode repositoriesNode = root.path("repositories");
+    if (!repositoriesNode.isArray()) {
+      throw new GitHubFetchException("GitHub repositories response was not valid");
+    }
+
+    List<GitHubRepositoryMetadata> repositories = new ArrayList<>();
+    for (JsonNode repository : repositoriesNode) {
+      String fullName = repository.path("full_name").asText("");
+      String owner = repository.path("owner").path("login").asText("");
+      repositories.add(new GitHubRepositoryMetadata(
+          repository.path("id").asLong(),
+          owner,
+          repository.path("name").asText(""),
+          fullName,
+          repository.path("private").asBoolean(false)
+      ));
+    }
+    return repositories;
+  }
+
+  @Override
+  public List<GitHubPullRequestSummary> listPullRequests(
+      String installationToken,
+      GitHubPullRequestRef pullRequest
+  ) {
+    JsonNode root = sendGet(
+        "/repos/" + pullRequest.owner() + "/" + pullRequest.repo() + "/pulls?state=open",
+        installationToken
+    );
+    if (!root.isArray()) {
+      throw new GitHubFetchException("GitHub pull requests response was not valid");
+    }
+
+    List<GitHubPullRequestSummary> pullRequests = new ArrayList<>();
+    for (JsonNode pullRequestNode : root) {
+      pullRequests.add(new GitHubPullRequestSummary(
+          pullRequestNode.path("number").asInt(),
+          pullRequestNode.path("title").asText(""),
+          pullRequestNode.path("user").path("login").asText(""),
+          pullRequestNode.path("html_url").asText("")
+      ));
+    }
+    return pullRequests;
+  }
+
+  @Override
   public String createPullRequestComment(GitHubPullRequestRef pullRequest, String body) {
     JsonNode root = sendPost(
         issueCommentsPath(pullRequest),
@@ -77,6 +125,10 @@ public class HttpGitHubClient implements GitHubClient {
   }
 
   private JsonNode sendGet(String path) {
+    return sendGet(path, null);
+  }
+
+  private JsonNode sendGet(String path, String bearerToken) {
     try {
       HttpRequest.Builder builder = HttpRequest.newBuilder()
           .uri(URI.create(properties.apiBaseUrl() + path))
@@ -85,8 +137,12 @@ public class HttpGitHubClient implements GitHubClient {
           .header("X-GitHub-Api-Version", "2022-11-28")
           .GET();
 
-      if (properties.hasToken()) {
-        builder.header("Authorization", "Bearer " + properties.token());
+      String token = bearerToken;
+      if ((token == null || token.isBlank()) && properties.hasToken()) {
+        token = properties.token();
+      }
+      if (token != null && !token.isBlank()) {
+        builder.header("Authorization", "Bearer " + token);
       }
 
       HttpResponse<String> response = httpClient.send(

@@ -13,6 +13,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class GitHubConnectionService {
   private final GitHubConnectionRepository gitHubConnectionRepository;
   private final GitHubPendingConnectionRepository gitHubPendingConnectionRepository;
   private final GitHubClient gitHubClient;
+  private final GitHubAppTokenService gitHubAppTokenService;
   private final CodeGuardGitHubProperties properties;
 
   public GitHubConnectionService(
@@ -31,12 +33,14 @@ public class GitHubConnectionService {
       GitHubConnectionRepository gitHubConnectionRepository,
       GitHubPendingConnectionRepository gitHubPendingConnectionRepository,
       GitHubClient gitHubClient,
+      GitHubAppTokenService gitHubAppTokenService,
       CodeGuardGitHubProperties properties
   ) {
     this.currentUserService = currentUserService;
     this.gitHubConnectionRepository = gitHubConnectionRepository;
     this.gitHubPendingConnectionRepository = gitHubPendingConnectionRepository;
     this.gitHubClient = gitHubClient;
+    this.gitHubAppTokenService = gitHubAppTokenService;
     this.properties = properties;
   }
 
@@ -94,11 +98,46 @@ public class GitHubConnectionService {
     return properties.frontendConnectedRedirectUrl();
   }
 
+  @Transactional(readOnly = true)
+  public List<GitHubRepositoryMetadata> listRepositories() {
+    GitHubConnectionEntity connection = getRequiredConnection(
+        "Connect GitHub before loading repositories."
+    );
+    return gitHubClient.listInstallationRepositories(
+        gitHubAppTokenService.createInstallationAccessToken(connection.getInstallationId())
+    );
+  }
+
+  @Transactional(readOnly = true)
+  public List<GitHubPullRequestSummary> listPullRequests(String owner, String repo) {
+    GitHubConnectionEntity connection = getRequiredConnection(
+        "Connect GitHub before loading pull requests."
+    );
+    return gitHubClient.listPullRequests(
+        gitHubAppTokenService.createInstallationAccessToken(connection.getInstallationId()),
+        new GitHubPullRequestRef(owner, repo, 0)
+    );
+  }
+
+  @Transactional(readOnly = true)
+  public String createInstallationAccessToken() {
+    GitHubConnectionEntity connection = getRequiredConnection(
+        "Connect GitHub before reviewing pull requests."
+    );
+    return gitHubAppTokenService.createInstallationAccessToken(connection.getInstallationId());
+  }
+
   private GitHubConnectionResponse toResponse(GitHubConnectionEntity connection) {
     return GitHubConnectionResponse.connected(
         connection.getInstallationId(),
         connection.getAccountLogin(),
         connection.getAccountType()
     );
+  }
+
+  private GitHubConnectionEntity getRequiredConnection(String message) {
+    UserEntity user = currentUserService.getCurrentUser();
+    return gitHubConnectionRepository.findByUserId(user.getId())
+        .orElseThrow(() -> new GitHubConnectionRequiredException(message));
   }
 }

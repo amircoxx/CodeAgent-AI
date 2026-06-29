@@ -78,6 +78,9 @@ class GitHubControllerTest {
   @MockBean
   private GitHubClient gitHubClient;
 
+  @MockBean
+  private GitHubAppTokenService gitHubAppTokenService;
+
   @BeforeEach
   void setUp() {
     codeReviewRepository.deleteAll();
@@ -181,6 +184,67 @@ class GitHubControllerTest {
             .param("state", "not-valid"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("GitHub connection state is invalid or expired."));
+  }
+
+  @Test
+  void repositoriesRequireGitHubConnection() throws Exception {
+    String token = register("amir@example.com");
+
+    mockMvc.perform(get("/api/github/repositories")
+            .header("Authorization", "Bearer " + token))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.message").value("Connect GitHub before loading repositories."));
+  }
+
+  @Test
+  void repositoriesReturnInstallationRepositoriesForConnectedUser() throws Exception {
+    String token = register("amir@example.com");
+    connectUser("amir@example.com", 98765L);
+    when(gitHubAppTokenService.createInstallationAccessToken(98765L))
+        .thenReturn("installation-token");
+    when(gitHubClient.listInstallationRepositories("installation-token"))
+        .thenReturn(List.of(
+            new GitHubRepositoryMetadata(101L, "owner", "repo", "owner/repo", false),
+            new GitHubRepositoryMetadata(102L, "owner", "private-repo", "owner/private-repo", true)
+        ));
+
+    mockMvc.perform(get("/api/github/repositories")
+            .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(101))
+        .andExpect(jsonPath("$[0].owner").value("owner"))
+        .andExpect(jsonPath("$[0].name").value("repo"))
+        .andExpect(jsonPath("$[0].fullName").value("owner/repo"))
+        .andExpect(jsonPath("$[0].privateRepository").value(false))
+        .andExpect(jsonPath("$[1].id").value(102))
+        .andExpect(jsonPath("$[1].privateRepository").value(true));
+  }
+
+  @Test
+  void pullRequestsReturnOpenPullRequestsForSelectedRepository() throws Exception {
+    String token = register("amir@example.com");
+    connectUser("amir@example.com", 98765L);
+    when(gitHubAppTokenService.createInstallationAccessToken(98765L))
+        .thenReturn("installation-token");
+    when(gitHubClient.listPullRequests(
+        eq("installation-token"),
+        argThat(ref -> "owner".equals(ref.owner()) && "repo".equals(ref.repo()) && ref.number() == 0)
+    )).thenReturn(List.of(
+        new GitHubPullRequestSummary(
+            123,
+            "Add validation",
+            "octocat",
+            "https://github.com/owner/repo/pull/123"
+        )
+    ));
+
+    mockMvc.perform(get("/api/github/repositories/{owner}/{repo}/pull-requests", "owner", "repo")
+            .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].number").value(123))
+        .andExpect(jsonPath("$[0].title").value("Add validation"))
+        .andExpect(jsonPath("$[0].author").value("octocat"))
+        .andExpect(jsonPath("$[0].url").value("https://github.com/owner/repo/pull/123"));
   }
 
   @Test
@@ -354,6 +418,15 @@ class GitHubControllerTest {
         .andExpect(status().isCreated())
         .andReturn();
     return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asLong();
+  }
+
+  private void connectUser(String email, Long installationId) {
+    gitHubConnectionRepository.save(new GitHubConnectionEntity(
+        userRepository.findActiveByEmail(email).orElseThrow(),
+        installationId,
+        "codeguard-labs",
+        "Organization"
+    ));
   }
 
   private String register(String email) throws Exception {
