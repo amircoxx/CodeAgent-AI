@@ -26,6 +26,7 @@ yarn-error.log*
 
 # Local Codex/Superpowers companion state
 .superpowers/
+.worktrees/
 
 # OS files
 .DS_Store
