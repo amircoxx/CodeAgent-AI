@@ -12,6 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.codeguard.backend.project.repository.ProjectRepository;
+import com.codeguard.backend.github.entity.GitHubConnectionEntity;
+import com.codeguard.backend.github.repository.GitHubConnectionRepository;
 import com.codeguard.backend.review.entity.CodeReviewEntity;
 import com.codeguard.backend.review.model.ReviewSource;
 import com.codeguard.backend.review.repository.CodeReviewRepository;
@@ -60,6 +62,9 @@ class GitHubControllerTest {
   private ProjectRepository projectRepository;
 
   @Autowired
+  private GitHubConnectionRepository gitHubConnectionRepository;
+
+  @Autowired
   private UserRepository userRepository;
 
   @MockBean
@@ -69,7 +74,39 @@ class GitHubControllerTest {
   void setUp() {
     codeReviewRepository.deleteAll();
     projectRepository.deleteAll();
+    gitHubConnectionRepository.deleteAll();
     userRepository.deleteAll();
+  }
+
+  @Test
+  void connectionStatusReturnsDisconnectedWhenUserHasNoGitHubInstallation() throws Exception {
+    String token = register("amir@example.com");
+
+    mockMvc.perform(get("/api/github/connection")
+            .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.connected").value(false))
+        .andExpect(jsonPath("$.accountLogin").doesNotExist())
+        .andExpect(jsonPath("$.accountType").doesNotExist());
+  }
+
+  @Test
+  void connectionStatusReturnsInstallationAccountWhenConnected() throws Exception {
+    String token = register("amir@example.com");
+    gitHubConnectionRepository.save(new GitHubConnectionEntity(
+        userRepository.findActiveByEmail("amir@example.com").orElseThrow(),
+        98765L,
+        "codeguard-labs",
+        "Organization"
+    ));
+
+    mockMvc.perform(get("/api/github/connection")
+            .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.connected").value(true))
+        .andExpect(jsonPath("$.installationId").value(98765))
+        .andExpect(jsonPath("$.accountLogin").value("codeguard-labs"))
+        .andExpect(jsonPath("$.accountType").value("Organization"));
   }
 
   @Test

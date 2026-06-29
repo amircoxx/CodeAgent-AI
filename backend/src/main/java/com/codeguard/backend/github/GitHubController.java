@@ -1,7 +1,9 @@
 package com.codeguard.backend.github;
 
+import com.codeguard.backend.github.dto.GitHubConnectionResponse;
 import com.codeguard.backend.review.dto.ReviewResponse;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,9 +14,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class GitHubController {
 
   private final GitHubPullRequestReviewService pullRequestReviewService;
+  private final GitHubConnectionService gitHubConnectionService;
 
-  public GitHubController(GitHubPullRequestReviewService pullRequestReviewService) {
+  public GitHubController(
+      GitHubPullRequestReviewService pullRequestReviewService,
+      GitHubConnectionService gitHubConnectionService
+  ) {
     this.pullRequestReviewService = pullRequestReviewService;
+    this.gitHubConnectionService = gitHubConnectionService;
+  }
+
+  @GetMapping("/connection")
+  public GitHubConnectionResponse getConnection() {
+    return gitHubConnectionService.getConnection();
   }
 
   @PostMapping("/pull-request-review")
