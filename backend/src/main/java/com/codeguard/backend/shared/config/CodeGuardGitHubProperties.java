@@ -6,6 +6,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record CodeGuardGitHubProperties(
     String token,
     String apiBaseUrl,
+    Long appId,
+    String appSlug,
+    String privateKey,
+    String setupCallbackUrl,
+    String frontendConnectedRedirectUrl,
+    int pendingStateTtlMinutes,
     int timeoutSeconds,
     int maxFiles,
     int maxPatchChars,

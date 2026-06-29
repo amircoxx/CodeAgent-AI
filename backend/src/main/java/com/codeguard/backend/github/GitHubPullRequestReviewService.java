@@ -14,20 +14,27 @@ public class GitHubPullRequestReviewService {
   private final GitHubClient gitHubClient;
   private final ReviewService reviewService;
   private final CodeGuardGitHubProperties properties;
+  private final GitHubConnectionService gitHubConnectionService;
 
   public GitHubPullRequestReviewService(
       GitHubPullRequestUrlParser urlParser,
       GitHubClient gitHubClient,
       ReviewService reviewService,
-      CodeGuardGitHubProperties properties
+      CodeGuardGitHubProperties properties,
+      GitHubConnectionService gitHubConnectionService
   ) {
     this.urlParser = urlParser;
     this.gitHubClient = gitHubClient;
     this.reviewService = reviewService;
     this.properties = properties;
+    this.gitHubConnectionService = gitHubConnectionService;
   }
 
   public ReviewResponse reviewPullRequest(GitHubPullRequestReviewRequest request) {
+    if (request.isSelectedPullRequest()) {
+      return reviewSelectedPullRequest(request);
+    }
+
     GitHubPullRequestRef pullRequest = urlParser.parse(request.pullRequestUrl());
     GitHubPullRequestMetadata metadata = gitHubClient.fetchPullRequest(pullRequest);
     List<GitHubPullRequestFile> reviewableFiles = gitHubClient.fetchPullRequestFiles(pullRequest)
@@ -60,6 +67,48 @@ public class GitHubPullRequestReviewService {
     }
 
     return postReviewComment(pullRequest, review);
+  }
+
+  private ReviewResponse reviewSelectedPullRequest(GitHubPullRequestReviewRequest request) {
+    GitHubPullRequestRef pullRequest = new GitHubPullRequestRef(
+        request.owner().trim(),
+        request.repo().trim(),
+        request.pullRequestNumber()
+    );
+    String installationToken = gitHubConnectionService.createInstallationAccessToken();
+    GitHubPullRequestMetadata metadata = gitHubClient.fetchPullRequest(
+        installationToken,
+        pullRequest
+    );
+    List<GitHubPullRequestFile> reviewableFiles = gitHubClient.fetchPullRequestFiles(
+            installationToken,
+            pullRequest
+        )
+        .stream()
+        .filter(this::isReviewable)
+        .limit(properties.maxFiles())
+        .toList();
+
+    if (reviewableFiles.isEmpty()) {
+      throw new GitHubFetchException("GitHub pull request did not include reviewable text patches");
+    }
+
+    String pullRequestUrl = "https://github.com/"
+        + pullRequest.owner() + "/" + pullRequest.repo() + "/pull/" + pullRequest.number();
+    String title = "GitHub PR Review: "
+        + pullRequest.owner() + "/" + pullRequest.repo() + "#" + pullRequest.number();
+
+    return reviewService.createGitHubPullRequestReview(
+        request.projectId(),
+        title,
+        "Multiple",
+        buildReviewInput(pullRequest, metadata, reviewableFiles),
+        pullRequest.owner(),
+        pullRequest.repo(),
+        pullRequest.number(),
+        pullRequestUrl,
+        blankToNull(metadata.title())
+    );
   }
 
   private ReviewResponse postReviewComment(GitHubPullRequestRef pullRequest, ReviewResponse review) {
