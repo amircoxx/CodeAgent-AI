@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,61 @@ public class HttpGitHubClient implements GitHubClient {
     this.httpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(properties.timeoutSeconds()))
         .build();
+  }
+
+  @Override
+  public GitHubOAuthToken exchangeOAuthCode(String code) {
+    try {
+      String form = "client_id=" + encode(properties.oauthClientId())
+          + "&client_secret=" + encode(properties.oauthClientSecret())
+          + "&code=" + encode(code)
+          + "&redirect_uri=" + encode(properties.oauthCallbackUrl());
+
+      HttpRequest request = HttpRequest.newBuilder()
+          .uri(URI.create(properties.oauthTokenUrl()))
+          .timeout(Duration.ofSeconds(properties.timeoutSeconds()))
+          .header("Accept", "application/json")
+          .header("Content-Type", "application/x-www-form-urlencoded")
+          .POST(HttpRequest.BodyPublishers.ofString(form))
+          .build();
+
+      HttpResponse<String> response = httpClient.send(
+          request,
+          HttpResponse.BodyHandlers.ofString()
+      );
+
+      if (response.statusCode() < 200 || response.statusCode() >= 300) {
+        throw new GitHubFetchException("GitHub OAuth returned HTTP " + response.statusCode());
+      }
+
+      JsonNode root = objectMapper.readTree(response.body());
+      String accessToken = root.path("access_token").asText("");
+      if (accessToken.isBlank()) {
+        throw new GitHubFetchException("GitHub OAuth token response was not valid");
+      }
+
+      return new GitHubOAuthToken(
+          accessToken,
+          root.path("token_type").asText("bearer"),
+          root.path("scope").asText(properties.resolvedOAuthScope())
+      );
+    } catch (IOException exception) {
+      throw new GitHubFetchException("Could not exchange GitHub OAuth code", exception);
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      throw new GitHubFetchException("GitHub OAuth request was interrupted", exception);
+    }
+  }
+
+  @Override
+  public GitHubAuthenticatedUser fetchAuthenticatedUser(String accessToken) {
+    JsonNode root = sendGet("/user", accessToken);
+    Long id = root.path("id").isNumber() ? root.path("id").asLong() : null;
+    return new GitHubAuthenticatedUser(
+        id,
+        root.path("login").asText(""),
+        root.path("type").asText("User")
+    );
   }
 
   @Override
@@ -219,5 +276,9 @@ public class HttpGitHubClient implements GitHubClient {
   private String issueCommentsPath(GitHubPullRequestRef pullRequest) {
     return "/repos/" + pullRequest.owner() + "/" + pullRequest.repo()
         + "/issues/" + pullRequest.number() + "/comments";
+  }
+
+  private String encode(String value) {
+    return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
   }
 }

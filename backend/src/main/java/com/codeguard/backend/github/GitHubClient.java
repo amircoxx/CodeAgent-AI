@@ -4,6 +4,10 @@ import java.util.List;
 
 public interface GitHubClient {
 
+  GitHubOAuthToken exchangeOAuthCode(String code);
+
+  GitHubAuthenticatedUser fetchAuthenticatedUser(String accessToken);
+
   GitHubInstallationMetadata fetchInstallation(Long installationId);
 
   List<GitHubRepositoryMetadata> listInstallationRepositories(String installationToken);

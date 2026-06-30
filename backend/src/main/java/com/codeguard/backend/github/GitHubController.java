@@ -39,12 +39,12 @@ public class GitHubController {
 
   @GetMapping("/setup")
   public ResponseEntity<Void> completeSetup(
-      @RequestParam("installation_id") Long installationId,
+      @RequestParam(required = false) String code,
       @RequestParam String state
   ) {
     return ResponseEntity
         .status(302)
-        .header("Location", gitHubConnectionService.completeSetup(installationId, state))
+        .header("Location", gitHubConnectionService.completeSetup(code, state))
         .build();
   }
 

@@ -139,7 +139,13 @@ class GitHubControllerTest {
             .header("Authorization", "Bearer " + token))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.connectUrl")
-            .value(org.hamcrest.Matchers.startsWith("https://github.com/apps/codeguard-ai-test/installations/new")))
+            .value(org.hamcrest.Matchers.startsWith("https://github.com/login/oauth/authorize?")))
+        .andExpect(jsonPath("$.connectUrl")
+            .value(org.hamcrest.Matchers.containsString("client_id=test-client-id")))
+        .andExpect(jsonPath("$.connectUrl")
+            .value(org.hamcrest.Matchers.containsString("scope=repo")))
+        .andExpect(jsonPath("$.connectUrl")
+            .value(org.hamcrest.Matchers.containsString("redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fapi%2Fgithub%2Fsetup")))
         .andExpect(jsonPath("$.state").isString());
 
     assertThat(gitHubPendingConnectionRepository.findAll())
@@ -152,7 +158,7 @@ class GitHubControllerTest {
   }
 
   @Test
-  void setupBindsInstallationToCurrentUserWhenStateIsValid() throws Exception {
+  void setupExchangesOAuthCodeAndBindsConnectionToCurrentUserWhenStateIsValid() throws Exception {
     String token = register("amir@example.com");
     Long userId = userRepository.findActiveByEmail("amir@example.com").orElseThrow().getId();
     String state = objectMapper.readTree(mockMvc.perform(get("/api/github/connect-url")
@@ -161,12 +167,14 @@ class GitHubControllerTest {
         .andReturn()
         .getResponse()
         .getContentAsString()).get("state").asText();
-    when(gitHubClient.fetchInstallation(eq(98765L)))
-        .thenReturn(new GitHubInstallationMetadata(98765L, "codeguard-labs", "Organization"));
+    when(gitHubClient.exchangeOAuthCode("abc123"))
+        .thenReturn(new GitHubOAuthToken("oauth-token", "bearer", "repo"));
+    when(gitHubClient.fetchAuthenticatedUser("oauth-token"))
+        .thenReturn(new GitHubAuthenticatedUser(123456L, "amircox", "User"));
 
     mockMvc.perform(get("/api/github/setup")
             .header("Authorization", "Bearer " + token)
-            .param("installation_id", "98765")
+            .param("code", "abc123")
             .param("state", state))
         .andExpect(status().is3xxRedirection())
         .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl())
@@ -176,11 +184,30 @@ class GitHubControllerTest {
         .singleElement()
         .satisfies(connection -> {
           assertThat(connection.getUser().getId()).isEqualTo(userId);
-          assertThat(connection.getInstallationId()).isEqualTo(98765L);
-          assertThat(connection.getAccountLogin()).isEqualTo("codeguard-labs");
-          assertThat(connection.getAccountType()).isEqualTo("Organization");
+          assertThat(connection.getAccessToken()).isEqualTo("oauth-token");
+          assertThat(connection.getScope()).isEqualTo("repo");
+          assertThat(connection.getGithubUserId()).isEqualTo(123456L);
+          assertThat(connection.getAccountLogin()).isEqualTo("amircox");
+          assertThat(connection.getAccountType()).isEqualTo("User");
         });
     assertThat(gitHubPendingConnectionRepository.findAll()).isEmpty();
+  }
+
+  @Test
+  void setupReturnsBadRequestWhenOAuthCodeIsMissing() throws Exception {
+    String token = register("amir@example.com");
+    String state = objectMapper.readTree(mockMvc.perform(get("/api/github/connect-url")
+            .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andReturn()
+        .getResponse()
+        .getContentAsString()).get("state").asText();
+
+    mockMvc.perform(get("/api/github/setup")
+            .header("Authorization", "Bearer " + token)
+            .param("state", state))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("GitHub OAuth code is required."));
   }
 
   @Test
@@ -189,7 +216,7 @@ class GitHubControllerTest {
 
     mockMvc.perform(get("/api/github/setup")
             .header("Authorization", "Bearer " + token)
-            .param("installation_id", "98765")
+            .param("code", "abc123")
             .param("state", "not-valid"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("GitHub connection state is invalid or expired."));

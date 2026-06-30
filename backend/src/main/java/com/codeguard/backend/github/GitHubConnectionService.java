@@ -25,7 +25,6 @@ public class GitHubConnectionService {
   private final GitHubConnectionRepository gitHubConnectionRepository;
   private final GitHubPendingConnectionRepository gitHubPendingConnectionRepository;
   private final GitHubClient gitHubClient;
-  private final GitHubAppTokenService gitHubAppTokenService;
   private final CodeGuardGitHubProperties properties;
 
   public GitHubConnectionService(
@@ -33,14 +32,12 @@ public class GitHubConnectionService {
       GitHubConnectionRepository gitHubConnectionRepository,
       GitHubPendingConnectionRepository gitHubPendingConnectionRepository,
       GitHubClient gitHubClient,
-      GitHubAppTokenService gitHubAppTokenService,
       CodeGuardGitHubProperties properties
   ) {
     this.currentUserService = currentUserService;
     this.gitHubConnectionRepository = gitHubConnectionRepository;
     this.gitHubPendingConnectionRepository = gitHubPendingConnectionRepository;
     this.gitHubClient = gitHubClient;
-    this.gitHubAppTokenService = gitHubAppTokenService;
     this.properties = properties;
   }
 
@@ -66,32 +63,45 @@ public class GitHubConnectionService {
         now.plus(properties.pendingStateTtlMinutes(), ChronoUnit.MINUTES)
     ));
 
-    String appSlug = properties.appSlug() == null ? "" : properties.appSlug().trim();
-    String connectUrl = "https://github.com/apps/" + appSlug + "/installations/new"
-        + "?state=" + URLEncoder.encode(state, StandardCharsets.UTF_8);
+    if (!properties.hasOAuthCredentials()) {
+      throw new GitHubFetchException("GitHub OAuth credentials are not configured.");
+    }
+
+    String connectUrl = properties.oauthAuthorizeUrl()
+        + "?client_id=" + encode(properties.oauthClientId())
+        + "&redirect_uri=" + encode(properties.oauthCallbackUrl())
+        + "&scope=" + encode(properties.resolvedOAuthScope())
+        + "&state=" + encode(state);
     return new GitHubConnectUrlResponse(connectUrl, state);
   }
 
   @Transactional
-  public String completeSetup(Long installationId, String state) {
-    UserEntity user = currentUserService.getCurrentUser();
-    GitHubPendingConnectionEntity pending = gitHubPendingConnectionRepository.findByState(state)
-        .filter(candidate -> candidate.getUser().getId().equals(user.getId()))
-        .filter(candidate -> !candidate.isExpired(Instant.now()))
-        .orElseThrow(GitHubSetupStateException::new);
+  public String completeSetup(String code, String state) {
+    if (code == null || code.isBlank()) {
+      throw new GitHubSetupStateException("GitHub OAuth code is required.");
+    }
 
-    GitHubInstallationMetadata installation = gitHubClient.fetchInstallation(installationId);
+    UserEntity user = currentUserService.getCurrentUser();
+    GitHubPendingConnectionEntity pending = validatePendingState(user, state);
+    GitHubOAuthToken token = gitHubClient.exchangeOAuthCode(code.trim());
+    GitHubAuthenticatedUser gitHubUser = gitHubClient.fetchAuthenticatedUser(token.accessToken());
     GitHubConnectionEntity connection = gitHubConnectionRepository.findByUserId(user.getId())
         .orElseGet(() -> new GitHubConnectionEntity(
             user,
-            installation.installationId(),
-            installation.accountLogin(),
-            installation.accountType()
+            token.accessToken(),
+            token.tokenType(),
+            token.scope(),
+            gitHubUser.id(),
+            gitHubUser.login(),
+            gitHubUser.type()
         ));
-    connection.updateInstallation(
-        installation.installationId(),
-        installation.accountLogin(),
-        installation.accountType()
+    connection.updateOAuthConnection(
+        token.accessToken(),
+        token.tokenType(),
+        token.scope(),
+        gitHubUser.id(),
+        gitHubUser.login(),
+        gitHubUser.type()
     );
     gitHubConnectionRepository.save(connection);
     gitHubPendingConnectionRepository.delete(pending);
@@ -104,7 +114,7 @@ public class GitHubConnectionService {
         "Connect GitHub before loading repositories."
     );
     return gitHubClient.listInstallationRepositories(
-        gitHubAppTokenService.createInstallationAccessToken(connection.getInstallationId())
+        connection.getAccessToken()
     );
   }
 
@@ -114,7 +124,7 @@ public class GitHubConnectionService {
         "Connect GitHub before loading pull requests."
     );
     return gitHubClient.listPullRequests(
-        gitHubAppTokenService.createInstallationAccessToken(connection.getInstallationId()),
+        connection.getAccessToken(),
         new GitHubPullRequestRef(owner, repo, 0)
     );
   }
@@ -124,12 +134,11 @@ public class GitHubConnectionService {
     GitHubConnectionEntity connection = getRequiredConnection(
         "Connect GitHub before reviewing pull requests."
     );
-    return gitHubAppTokenService.createInstallationAccessToken(connection.getInstallationId());
+    return connection.getAccessToken();
   }
 
   private GitHubConnectionResponse toResponse(GitHubConnectionEntity connection) {
     return GitHubConnectionResponse.connected(
-        connection.getInstallationId(),
         connection.getAccountLogin(),
         connection.getAccountType()
     );
@@ -139,5 +148,16 @@ public class GitHubConnectionService {
     UserEntity user = currentUserService.getCurrentUser();
     return gitHubConnectionRepository.findByUserId(user.getId())
         .orElseThrow(() -> new GitHubConnectionRequiredException(message));
+  }
+
+  private GitHubPendingConnectionEntity validatePendingState(UserEntity user, String state) {
+    return gitHubPendingConnectionRepository.findByState(state)
+        .filter(candidate -> candidate.getUser().getId().equals(user.getId()))
+        .filter(candidate -> !candidate.isExpired(Instant.now()))
+        .orElseThrow(GitHubSetupStateException::new);
+  }
+
+  private String encode(String value) {
+    return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
   }
 }
