@@ -75,13 +75,13 @@ public class GitHubPullRequestReviewService {
         request.repo().trim(),
         request.pullRequestNumber()
     );
-    String installationToken = gitHubConnectionService.createInstallationAccessToken();
+    String accessToken = gitHubConnectionService.getConnectedAccessToken();
     GitHubPullRequestMetadata metadata = gitHubClient.fetchPullRequest(
-        installationToken,
+        accessToken,
         pullRequest
     );
     List<GitHubPullRequestFile> reviewableFiles = gitHubClient.fetchPullRequestFiles(
-            installationToken,
+            accessToken,
             pullRequest
         )
         .stream()

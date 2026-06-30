@@ -233,12 +233,10 @@ class GitHubControllerTest {
   }
 
   @Test
-  void repositoriesReturnInstallationRepositoriesForConnectedUser() throws Exception {
+  void repositoriesReturnAuthenticatedUserRepositoriesForConnectedUser() throws Exception {
     String token = register("amir@example.com");
-    connectUser("amir@example.com", 98765L);
-    when(gitHubAppTokenService.createInstallationAccessToken(98765L))
-        .thenReturn("installation-token");
-    when(gitHubClient.listInstallationRepositories("installation-token"))
+    connectUser("amir@example.com", "oauth-token");
+    when(gitHubClient.listAuthenticatedUserRepositories("oauth-token"))
         .thenReturn(List.of(
             new GitHubRepositoryMetadata(101L, "owner", "repo", "owner/repo", false),
             new GitHubRepositoryMetadata(102L, "owner", "private-repo", "owner/private-repo", true)
@@ -259,11 +257,9 @@ class GitHubControllerTest {
   @Test
   void pullRequestsReturnOpenPullRequestsForSelectedRepository() throws Exception {
     String token = register("amir@example.com");
-    connectUser("amir@example.com", 98765L);
-    when(gitHubAppTokenService.createInstallationAccessToken(98765L))
-        .thenReturn("installation-token");
+    connectUser("amir@example.com", "oauth-token");
     when(gitHubClient.listPullRequests(
-        eq("installation-token"),
+        eq("oauth-token"),
         argThat(ref -> "owner".equals(ref.owner()) && "repo".equals(ref.repo()) && ref.number() == 0)
     )).thenReturn(List.of(
         new GitHubPullRequestSummary(
@@ -284,12 +280,10 @@ class GitHubControllerTest {
   }
 
   @Test
-  void selectedPullRequestReviewUsesConnectedInstallationTokenAndSavesReview() throws Exception {
+  void selectedPullRequestReviewUsesConnectedOAuthTokenAndSavesReview() throws Exception {
     String token = register("amir@example.com");
-    connectUser("amir@example.com", 98765L);
-    when(gitHubAppTokenService.createInstallationAccessToken(98765L))
-        .thenReturn("installation-token");
-    stubGitHubPullRequest("installation-token");
+    connectUser("amir@example.com", "oauth-token");
+    stubGitHubPullRequest("oauth-token");
 
     mockMvc.perform(post("/api/github/pull-request-review")
             .header("Authorization", "Bearer " + token)
@@ -315,11 +309,11 @@ class GitHubControllerTest {
     assertThat(savedReview.getGithubRepo()).isEqualTo("repo");
     assertThat(savedReview.getGithubPullRequestNumber()).isEqualTo(123);
     verify(gitHubClient).fetchPullRequest(
-        eq("installation-token"),
+        eq("oauth-token"),
         argThat(pr -> "owner".equals(pr.owner()) && "repo".equals(pr.repo()) && pr.number() == 123)
     );
     verify(gitHubClient).fetchPullRequestFiles(
-        eq("installation-token"),
+        eq("oauth-token"),
         argThat(pr -> "owner".equals(pr.owner()) && "repo".equals(pr.repo()) && pr.number() == 123)
     );
     verify(gitHubClient, never()).createPullRequestComment(argThat(pr -> true), anyString());
@@ -529,12 +523,15 @@ class GitHubControllerTest {
     return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asLong();
   }
 
-  private void connectUser(String email, Long installationId) {
+  private void connectUser(String email, String accessToken) {
     gitHubConnectionRepository.save(new GitHubConnectionEntity(
         userRepository.findActiveByEmail(email).orElseThrow(),
-        installationId,
-        "codeguard-labs",
-        "Organization"
+        accessToken,
+        "bearer",
+        "repo",
+        123456L,
+        "amircox",
+        "User"
     ));
   }
 

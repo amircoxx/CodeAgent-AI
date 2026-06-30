@@ -113,7 +113,7 @@ public class GitHubConnectionService {
     GitHubConnectionEntity connection = getRequiredConnection(
         "Connect GitHub before loading repositories."
     );
-    return gitHubClient.listInstallationRepositories(
+    return gitHubClient.listAuthenticatedUserRepositories(
         connection.getAccessToken()
     );
   }
@@ -130,7 +130,7 @@ public class GitHubConnectionService {
   }
 
   @Transactional(readOnly = true)
-  public String createInstallationAccessToken() {
+  public String getConnectedAccessToken() {
     GitHubConnectionEntity connection = getRequiredConnection(
         "Connect GitHub before reviewing pull requests."
     );

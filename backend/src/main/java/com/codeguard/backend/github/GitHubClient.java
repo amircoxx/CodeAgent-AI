@@ -12,6 +12,8 @@ public interface GitHubClient {
 
   List<GitHubRepositoryMetadata> listInstallationRepositories(String installationToken);
 
+  List<GitHubRepositoryMetadata> listAuthenticatedUserRepositories(String accessToken);
+
   List<GitHubPullRequestSummary> listPullRequests(
       String installationToken,
       GitHubPullRequestRef pullRequest

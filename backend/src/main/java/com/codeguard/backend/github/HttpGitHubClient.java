@@ -147,6 +147,23 @@ public class HttpGitHubClient implements GitHubClient {
       throw new GitHubFetchException("GitHub repositories response was not valid");
     }
 
+    return parseRepositories(repositoriesNode);
+  }
+
+  @Override
+  public List<GitHubRepositoryMetadata> listAuthenticatedUserRepositories(String accessToken) {
+    JsonNode root = sendGet(
+        "/user/repos?affiliation=owner,collaborator,organization_member&sort=updated&per_page=100",
+        accessToken
+    );
+    if (!root.isArray()) {
+      throw new GitHubFetchException("GitHub repositories response was not valid");
+    }
+
+    return parseRepositories(root);
+  }
+
+  private List<GitHubRepositoryMetadata> parseRepositories(JsonNode repositoriesNode) {
     List<GitHubRepositoryMetadata> repositories = new ArrayList<>();
     for (JsonNode repository : repositoriesNode) {
       String fullName = repository.path("full_name").asText("");
