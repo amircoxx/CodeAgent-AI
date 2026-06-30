@@ -30,8 +30,17 @@ public class GitHubConnectionEntity {
   @JoinColumn(name = "user_id", nullable = false)
   private UserEntity user;
 
+  @Column(nullable = false, length = 512)
+  private String accessToken;
+
   @Column(nullable = false)
-  private Long installationId;
+  private String tokenType;
+
+  @Column(nullable = false)
+  private String scope;
+
+  @Column
+  private Long githubUserId;
 
   @Column(nullable = false)
   private String accountLogin;
@@ -50,14 +59,24 @@ public class GitHubConnectionEntity {
 
   public GitHubConnectionEntity(
       UserEntity user,
-      Long installationId,
+      String accessToken,
+      String tokenType,
+      String scope,
+      Long githubUserId,
       String accountLogin,
       String accountType
   ) {
     this.user = user;
-    this.installationId = installationId;
-    this.accountLogin = accountLogin;
-    this.accountType = accountType;
+    updateOAuthConnection(accessToken, tokenType, scope, githubUserId, accountLogin, accountType);
+  }
+
+  public GitHubConnectionEntity(
+      UserEntity user,
+      Long installationId,
+      String accountLogin,
+      String accountType
+  ) {
+    this(user, "legacy-installation-token", "bearer", "repo", installationId, accountLogin, accountType);
   }
 
   @PrePersist
@@ -80,8 +99,20 @@ public class GitHubConnectionEntity {
     return user;
   }
 
-  public Long getInstallationId() {
-    return installationId;
+  public String getAccessToken() {
+    return accessToken;
+  }
+
+  public String getTokenType() {
+    return tokenType;
+  }
+
+  public String getScope() {
+    return scope;
+  }
+
+  public Long getGithubUserId() {
+    return githubUserId;
   }
 
   public String getAccountLogin() {
@@ -100,9 +131,28 @@ public class GitHubConnectionEntity {
     return updatedAt;
   }
 
+  public Long getInstallationId() {
+    return null;
+  }
+
   public void updateInstallation(Long installationId, String accountLogin, String accountType) {
-    this.installationId = installationId;
     this.accountLogin = accountLogin;
     this.accountType = accountType;
+  }
+
+  public void updateOAuthConnection(
+      String accessToken,
+      String tokenType,
+      String scope,
+      Long githubUserId,
+      String accountLogin,
+      String accountType
+  ) {
+    this.accessToken = accessToken;
+    this.tokenType = tokenType == null || tokenType.isBlank() ? "bearer" : tokenType;
+    this.scope = scope == null || scope.isBlank() ? "repo" : scope;
+    this.githubUserId = githubUserId;
+    this.accountLogin = accountLogin;
+    this.accountType = accountType == null || accountType.isBlank() ? "User" : accountType;
   }
 }

@@ -49,6 +49,12 @@ import org.springframework.test.web.servlet.MvcResult;
     "codeguard.github.comments-enabled=true",
     "codeguard.github.token=test-token",
     "codeguard.github.app-slug=codeguard-ai-test",
+    "codeguard.github.oauth-client-id=test-client-id",
+    "codeguard.github.oauth-client-secret=test-client-secret",
+    "codeguard.github.oauth-scope=repo",
+    "codeguard.github.oauth-authorize-url=https://github.com/login/oauth/authorize",
+    "codeguard.github.oauth-token-url=https://github.com/login/oauth/access_token",
+    "codeguard.github.oauth-callback-url=http://localhost:8080/api/github/setup",
     "codeguard.github.frontend-connected-redirect-url=http://localhost:3000/?github=connected",
     "codeguard.github.pending-state-ttl-minutes=10"
 })
@@ -103,22 +109,25 @@ class GitHubControllerTest {
   }
 
   @Test
-  void connectionStatusReturnsInstallationAccountWhenConnected() throws Exception {
+  void connectionStatusReturnsOAuthAccountWhenConnected() throws Exception {
     String token = register("amir@example.com");
     gitHubConnectionRepository.save(new GitHubConnectionEntity(
         userRepository.findActiveByEmail("amir@example.com").orElseThrow(),
-        98765L,
-        "codeguard-labs",
-        "Organization"
+        "oauth-token",
+        "bearer",
+        "repo",
+        123456L,
+        "amircox",
+        "User"
     ));
 
     mockMvc.perform(get("/api/github/connection")
             .header("Authorization", "Bearer " + token))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.connected").value(true))
-        .andExpect(jsonPath("$.installationId").value(98765))
-        .andExpect(jsonPath("$.accountLogin").value("codeguard-labs"))
-        .andExpect(jsonPath("$.accountType").value("Organization"));
+        .andExpect(jsonPath("$.installationId").doesNotExist())
+        .andExpect(jsonPath("$.accountLogin").value("amircox"))
+        .andExpect(jsonPath("$.accountType").value("User"));
   }
 
   @Test

@@ -10,6 +10,12 @@ public record CodeGuardGitHubProperties(
     String appSlug,
     String privateKey,
     String setupCallbackUrl,
+    String oauthClientId,
+    String oauthClientSecret,
+    String oauthScope,
+    String oauthAuthorizeUrl,
+    String oauthTokenUrl,
+    String oauthCallbackUrl,
     String frontendConnectedRedirectUrl,
     int pendingStateTtlMinutes,
     int timeoutSeconds,
@@ -20,5 +26,14 @@ public record CodeGuardGitHubProperties(
 
   public boolean hasToken() {
     return token != null && !token.isBlank();
+  }
+
+  public boolean hasOAuthCredentials() {
+    return oauthClientId != null && !oauthClientId.isBlank()
+        && oauthClientSecret != null && !oauthClientSecret.isBlank();
+  }
+
+  public String resolvedOAuthScope() {
+    return oauthScope == null || oauthScope.isBlank() ? "repo" : oauthScope.trim();
   }
 }
