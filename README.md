@@ -232,6 +232,11 @@ GitHub:
 ```bash
 CODEGUARD_GITHUB_TOKEN=
 CODEGUARD_GITHUB_API_BASE_URL=https://api.github.com
+CODEGUARD_GITHUB_OAUTH_CLIENT_ID=
+CODEGUARD_GITHUB_OAUTH_CLIENT_SECRET=
+CODEGUARD_GITHUB_OAUTH_SCOPE=repo
+CODEGUARD_GITHUB_OAUTH_CALLBACK_URL=http://localhost:8080/api/github/setup
+CODEGUARD_GITHUB_FRONTEND_CONNECTED_REDIRECT_URL=http://localhost:3000/?github=connected
 CODEGUARD_GITHUB_TIMEOUT_SECONDS=15
 CODEGUARD_GITHUB_MAX_FILES=20
 CODEGUARD_GITHUB_MAX_PATCH_CHARS=30000
@@ -245,7 +250,9 @@ FRONTEND_PORT=3000
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ```
 
-Public GitHub PR review fetches work without a token, subject to GitHub rate limits. Posting PR comments is opt-in per review and requires `CODEGUARD_GITHUB_COMMENTS_ENABLED=true` plus `CODEGUARD_GITHUB_TOKEN`; the token is used only by the backend and is never sent to the frontend.
+Connected repository and pull request selection uses a GitHub OAuth App. For local development, create a GitHub OAuth App with callback URL `http://localhost:8080/api/github/setup`, then set `CODEGUARD_GITHUB_OAUTH_CLIENT_ID` and `CODEGUARD_GITHUB_OAUTH_CLIENT_SECRET`. The OAuth scope defaults to `repo` so CodeGuard can load public and private repositories for the connected user. OAuth access tokens are stored server-side and are never sent to the frontend.
+
+Public GitHub PR URL review fetches still work without OAuth, subject to GitHub rate limits. Posting PR comments is opt-in per review and requires `CODEGUARD_GITHUB_COMMENTS_ENABLED=true` plus `CODEGUARD_GITHUB_TOKEN`; that server token is used only by the backend and is never sent to the frontend.
 
 ## Deployment
 
@@ -271,17 +278,23 @@ Deployment checklist:
    - `CODEGUARD_AI_MODEL`
    - `CODEGUARD_AI_ENDPOINT`
    - `CODEGUARD_AI_TIMEOUT_SECONDS`
-5. Optionally set `CODEGUARD_GITHUB_TOKEN` for higher GitHub API rate limits, future private repository access, or GitHub PR comment posting.
-6. If enabling GitHub PR comments, set:
+5. Create a GitHub OAuth App with callback URL `https://your-backend.example.com/api/github/setup`, then set:
+   - `CODEGUARD_GITHUB_OAUTH_CLIENT_ID`
+   - `CODEGUARD_GITHUB_OAUTH_CLIENT_SECRET`
+   - `CODEGUARD_GITHUB_OAUTH_SCOPE=repo`
+   - `CODEGUARD_GITHUB_OAUTH_CALLBACK_URL=https://your-backend.example.com/api/github/setup`
+   - `CODEGUARD_GITHUB_FRONTEND_CONNECTED_REDIRECT_URL=https://your-frontend.example.com/?github=connected`
+6. Optionally set `CODEGUARD_GITHUB_TOKEN` for higher public GitHub API rate limits or GitHub PR comment posting.
+7. If enabling GitHub PR comments, set:
    - `CODEGUARD_GITHUB_COMMENTS_ENABLED=true`
-7. Deploy the backend and set `PORT` if the hosting platform requires a dynamic port.
-8. Confirm backend health:
+8. Deploy the backend and set `PORT` if the hosting platform requires a dynamic port.
+9. Confirm backend health:
 
 ```bash
 curl https://your-backend.example.com/api/health
 ```
 
-9. Deploy the frontend with:
+10. Deploy the frontend with:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=https://your-backend.example.com
@@ -500,7 +513,6 @@ Manual browser verification:
 
 ## Current Limitations
 
-- GitHub OAuth is not implemented yet.
 - GitHub webhooks are not implemented yet.
 - GitHub PR comments are opt-in only; automatic PR comments are not implemented.
 - Redis is included for future background jobs but not used by current review flows.

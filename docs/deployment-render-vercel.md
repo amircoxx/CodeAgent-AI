@@ -49,6 +49,11 @@ CODEGUARD_JWT_EXPIRATION_MS=86400000
 CODEGUARD_CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002
 CODEGUARD_AI_ENABLED=false
 CODEGUARD_GITHUB_API_BASE_URL=https://api.github.com
+CODEGUARD_GITHUB_OAUTH_CLIENT_ID=<github-oauth-client-id>
+CODEGUARD_GITHUB_OAUTH_CLIENT_SECRET=<github-oauth-client-secret>
+CODEGUARD_GITHUB_OAUTH_SCOPE=repo
+CODEGUARD_GITHUB_OAUTH_CALLBACK_URL=https://<render-backend>.onrender.com/api/github/setup
+CODEGUARD_GITHUB_FRONTEND_CONNECTED_REDIRECT_URL=https://<vercel-frontend>.vercel.app/?github=connected
 CODEGUARD_GITHUB_TIMEOUT_SECONDS=15
 CODEGUARD_GITHUB_MAX_FILES=20
 CODEGUARD_GITHUB_MAX_PATCH_CHARS=30000
@@ -68,6 +73,8 @@ Notes:
 
 - Render provides `PORT`; the backend reads it through `server.port=${PORT:8080}`.
 - Do not use `dev-secret-change-me` or the `.env.example` placeholder as the production JWT secret.
+- Create a GitHub OAuth App before enabling connected repository selection. Its callback URL must exactly match `CODEGUARD_GITHUB_OAUTH_CALLBACK_URL`.
+- `CODEGUARD_GITHUB_OAUTH_SCOPE=repo` lets CodeGuard list public and private repositories for the connected GitHub user.
 - Public GitHub PR reviews work without `CODEGUARD_GITHUB_TOKEN`, subject to GitHub rate limits.
 - AI can stay disabled; the mock fallback still supports demo reviews.
 
