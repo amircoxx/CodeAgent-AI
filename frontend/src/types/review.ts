@@ -28,7 +28,6 @@ export type GitHubPullRequestReviewRequest = {
 
 export type GitHubConnectionResponse = {
   connected: boolean;
-  installationId?: number | null;
   accountLogin?: string | null;
   accountType?: string | null;
 };

@@ -111,8 +111,7 @@ export function GitHubPrReviewForm({
         ) : !connection?.connected ? (
           <div className="space-y-4">
             <p className="text-sm leading-6 text-[#4f4b41]">
-              Install the CodeGuard GitHub App on selected repositories before
-              loading pull requests.
+              Authorize CodeGuard with GitHub to load repositories and pull requests.
             </p>
             <Button type="button" onClick={onConnect} disabled={isConnectPending}>
               {isConnectPending ? (
@@ -186,7 +185,7 @@ export function GitHubPrReviewForm({
                 <p className="text-xs font-bold text-[#8d281f]">{repositoriesError.message}</p>
               ) : repositories?.length === 0 ? (
                 <p className="text-xs text-[#6a6659]">
-                  No repositories found. Update the GitHub App installation to allow repository access.
+                  No repositories found. Confirm the connected GitHub account has repository access.
                 </p>
               ) : null}
             </div>
